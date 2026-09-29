@@ -113,20 +113,7 @@
         .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
         .hidden-step{display:none}
         .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
-        .wiz-top{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
-        .wiz-count{font-size:11.5px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em}
-        .wiz-dots{display:flex;gap:6px}
-        .wiz-dots span{width:9px;height:9px;border-radius:50%;background:var(--sand-200)}
-        .wiz-dots span.on{background:var(--terracotta-600)}
-        .wiz-dots span.ok{background:var(--acacia-500)}
-        .wiz-item{display:none;padding:6px 0 0;text-align:center}
-        .wiz-item.on{display:block;animation:fadeUp .3s ease}
-        .wiz-item .big-ico{width:60px;height:60px;border-radius:20px;margin:8px auto 4px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--terracotta-100);color:var(--terracotta-600)}
-        .wiz-item h4{margin:8px 0 4px;font-size:19px}
-        .wiz-desc{font-size:13px;color:var(--ink-soft);margin:0 0 12px;line-height:1.5}
-        .wiz-item .field{text-align:left}
         .wiz-back{background:none;border:none;color:var(--ink-soft);font-weight:700;font-size:13px;margin-top:12px;font-family:inherit}
-        .fill-rest{margin:10px auto 0}
         /* ---------- states ---------- */
         .ok-banner{background:var(--acacia-100);border:1.5px solid var(--acacia-500);color:var(--acacia-600);border-radius:var(--r-sm);padding:12px 15px;font-size:13.5px;font-weight:700;margin:14px 20px 0;text-align:center}
         .err-banner{background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:12px 15px;font-size:13px;font-weight:700;margin:14px 20px 0;text-align:center}
@@ -272,67 +259,28 @@
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}">
                     @csrf
                     <div id="allocStep" class="hidden-step">
-                        <div class="wiz-top"><div class="wiz-count" id="wizCount">Hatua 1 kati ya 7</div><div class="wiz-dots" id="wizDots"></div></div>
+                        <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Jaza mgawanyo wako — sehemu zote kwa ukurasa mmoja</div>
+                        <div class="chip-row">
+                            <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Weka yote taslimu</button>
+                            <button type="button" class="chip" id="clearAll"><i class="fa-solid fa-eraser"></i> Futa</button>
+                        </div>
+                        <div class="alloc-grid">
+                            <div class="field"><label>Pesa taslimu</label><div class="in-wrap"><i class="fa-solid fa-money-bill-wave"></i><input type="number" name="alloc_cash" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Lipa SWF</label><div class="in-wrap"><i class="fa-solid fa-shield-heart"></i><input type="number" name="alloc_swf" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Rejesho (mkopo)</label><div class="in-wrap"><i class="fa-solid fa-hand-holding-dollar"></i><input type="number" name="alloc_loan" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Hisa za duka</label><div class="in-wrap"><i class="fa-solid fa-store"></i><input type="number" name="alloc_shares" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Wekeza tena</label><div class="in-wrap"><i class="fa-solid fa-arrow-trend-up"></i><input type="number" name="alloc_reinvest" id="alloc_reinvest" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Muda wa kuwekeza</label><div class="in-wrap"><i class="fa-solid fa-calendar-days"></i><select name="reinvest_term" id="reinvest_term"><option value="">— Chagua —</option><option value="2">Miaka 2</option><option value="4">Miaka 4</option><option value="6">Miaka 6</option></select></div></div>
+                            <div class="field"><label>Akiba</label><div class="in-wrap"><i class="fa-solid fa-piggy-bank"></i><input type="number" name="alloc_savings" id="alloc_savings" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Aina ya akiba</label><div class="in-wrap"><i class="fa-solid fa-layer-group"></i><select name="savings_type" id="savings_type"><option value="">— Chagua —</option><option value="rda">RDA (&gt; 100,000)</option><option value="flex">Flex</option><option value="emergence">Emergence</option></select></div></div>
+                            <div class="field full"><label>Maelezo (hiari)</label><textarea name="decision_notes" id="decision_notes" rows="2" placeholder="Eleza marekebisho au maelekezo…"></textarea></div>
+                        </div>
                         <div class="remain" id="remainBox">
                             <div class="r-ico"><i class="fa-solid fa-scale-balanced"></i></div>
-                            <div><small>Salio lililobaki</small><b id="allocLeft">TZS {{ number_format($payout->net_cash, 0) }}</b></div>
+                            <div><small>Imebaki kugawa</small><b id="allocLeft">TZS {{ number_format($payout->net_cash, 0) }}</b></div>
                         </div>
                         <div class="mini-err" id="miniErr"></div>
-                        <div class="wiz-item" data-item="0">
-                            <div class="big-ico"><i class="fa-solid fa-money-bill-wave"></i></div>
-                            <h4>Pesa taslimu</h4>
-                            <p class="wiz-desc">Kiasi unachotaka kupokea taslimu moja kwa moja.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-money-bill-wave"></i><input type="number" name="alloc_cash" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div><button type="button" class="chip fill-rest"><i class="fa-solid fa-wand-magic-sparkles"></i> Weka salio lote hapa</button></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="1">
-                            <div class="big-ico"><i class="fa-solid fa-shield-heart"></i></div>
-                            <h4>Lipa SWF</h4>
-                            <p class="wiz-desc">Kiasi cha kuchangia Mfuko wa Ustawi (SWF). Weka 0 kama hutaki.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-shield-heart"></i><input type="number" name="alloc_swf" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div><button type="button" class="chip fill-rest"><i class="fa-solid fa-wand-magic-sparkles"></i> Weka salio lote hapa</button></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="2">
-                            <div class="big-ico"><i class="fa-solid fa-hand-holding-dollar"></i></div>
-                            <h4>Rejesho (mkopo)</h4>
-                            <p class="wiz-desc">Kiasi cha kulipa mkopo wako (rejesho). Weka 0 kama hutaki.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-hand-holding-dollar"></i><input type="number" name="alloc_loan" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div><button type="button" class="chip fill-rest"><i class="fa-solid fa-wand-magic-sparkles"></i> Weka salio lote hapa</button></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="3">
-                            <div class="big-ico"><i class="fa-solid fa-store"></i></div>
-                            <h4>Hisa za duka</h4>
-                            <p class="wiz-desc">Kiasi cha kununua hisa za duka. Weka 0 kama hutaki.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-store"></i><input type="number" name="alloc_shares" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div><button type="button" class="chip fill-rest"><i class="fa-solid fa-wand-magic-sparkles"></i> Weka salio lote hapa</button></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="4">
-                            <div class="big-ico"><i class="fa-solid fa-arrow-trend-up"></i></div>
-                            <h4>Wekeza tena</h4>
-                            <p class="wiz-desc">Kiasi cha kuwekeza tena, na muda wake. Weka 0 kama hutaki.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-arrow-trend-up"></i><input type="number" name="alloc_reinvest" id="alloc_reinvest" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div class="field" style="margin-top:12px"><label>Muda wa kuwekeza</label><div class="in-wrap"><i class="fa-solid fa-calendar-days"></i><select name="reinvest_term" id="reinvest_term"><option value="">— Chagua —</option><option value="2">Miaka 2</option><option value="4">Miaka 4</option><option value="6">Miaka 6</option></select></div></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="5">
-                            <div class="big-ico"><i class="fa-solid fa-piggy-bank"></i></div>
-                            <h4>Akiba</h4>
-                            <p class="wiz-desc">Kiasi cha kuweka akiba, na aina yake. Weka 0 kama hutaki.</p>
-                            <div class="field"><label>Kiasi (TZS)</label><div class="in-wrap"><i class="fa-solid fa-piggy-bank"></i><input type="number" name="alloc_savings" id="alloc_savings" class="alloc" min="0" step="100" value="0"></div></div>
-                            <div class="field" style="margin-top:12px"><label>Aina ya akiba</label><div class="in-wrap"><i class="fa-solid fa-layer-group"></i><select name="savings_type" id="savings_type"><option value="">— Chagua —</option><option value="rda">RDA (&gt; 100,000)</option><option value="flex">Flex</option><option value="emergence">Emergence</option></select></div></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Endelea</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                        <div class="wiz-item" data-item="6">
-                            <div class="big-ico"><i class="fa-solid fa-note-sticky"></i></div>
-                            <h4>Maelezo</h4>
-                            <p class="wiz-desc">Maelezo ya hiari — marekebisho au maelekezo kwa ofisi.</p>
-                            <div class="field"><label>Maelezo (hiari)</label><textarea name="decision_notes" id="decision_notes" rows="3" placeholder="Eleza marekebisho au maelekezo…"></textarea></div>
-                            <button type="button" class="btn wiz-confirm"><span>Thibitisha — Hakiki</span><i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
+                        <button type="button" class="btn" id="nextBtn"><span>Endelea — Hakiki</span><i class="fa-solid fa-arrow-right"></i></button>
                         <div style="text-align:center"><button type="button" class="wiz-back" id="wizBack"><i class="fa-solid fa-arrow-left"></i> Rudi nyuma</button></div>
                     </div>
                     <div id="previewStep" class="hidden-step">
@@ -369,21 +317,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const box = document.getElementById('remainBox');
     const btn = document.getElementById('verifyBtn');
     const allocInputs = f.querySelectorAll('.alloc');
-    const items = Array.from(f.querySelectorAll('.wiz-item'));
-    const dotsBox = document.getElementById('wizDots');
-    const wizCount = document.getElementById('wizCount');
+    const fillBtn = document.getElementById('fillCash');
+    const clearBtn = document.getElementById('clearAll');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
     const wizBack = document.getElementById('wizBack');
-    let cur = 0;
-    if (dotsBox) items.forEach(() => dotsBox.appendChild(document.createElement('span')));
-    const dots = dotsBox ? Array.from(dotsBox.children) : [];
     const fmt = n => 'TZS ' + Math.round(n).toLocaleString('en-US');
     const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
     function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
-    function maxFor(input){
-        let others = 0;
-        allocInputs.forEach(i => { if (i !== input) others += parseFloat(i.value) || 0; });
-        return Math.round((net - others) * 100) / 100;
-    }
     function showErr(msg){
         if (!miniErr) return;
         miniErr.textContent = msg;
@@ -397,42 +338,6 @@ document.addEventListener('DOMContentLoaded', function () {
         leftEl.textContent = fmt(left);
         const done = Math.abs(left) < 0.5;
         if (box) { box.classList.toggle('ok', done); box.classList.toggle('bad', !done); }
-    }
-    function showItem(i){
-        cur = Math.max(0, Math.min(items.length - 1, i));
-        items.forEach((el, k) => el.classList.toggle('on', k === cur));
-        dots.forEach((d, k) => { d.classList.toggle('on', k === cur); d.classList.toggle('ok', k < cur); });
-        if (wizCount) wizCount.textContent = 'Hatua ' + (cur + 1) + ' kati ya ' + items.length;
-        if (wizBack) wizBack.style.visibility = 'visible';
-        hideErr();
-        recalc();
-        const panel = items[cur];
-        if (panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
-        const inp = panel ? panel.querySelector('input, select, textarea') : null;
-        if (inp) setTimeout(() => { try { inp.focus({preventScroll:true}); } catch(e){} }, 350);
-    }
-    function confirmItem(panel){
-        hideErr();
-        const input = panel.querySelector('input.alloc');
-        if (input) {
-            const amt = parseFloat(input.value);
-            if (isNaN(amt) || amt < 0) { showErr('Weka kiasi sahihi (0 au zaidi).'); return; }
-            const max = maxFor(input);
-            if (Math.round((amt - max) * 100) / 100 > 0.5) { showErr('Kiasi kimezidi salio lililobaki (' + fmt(Math.max(0, max)) + ').'); return; }
-            if (input.name === 'alloc_reinvest' && amt > 0 && !['2','4','6'].includes(f.querySelector('#reinvest_term').value)) { showErr('Chagua miaka 2, 4 au 6 kwa kuwekeza tena.'); return; }
-            if (input.name === 'alloc_savings' && amt > 0) {
-                const t = f.querySelector('#savings_type').value;
-                if (!['rda','flex','emergence'].includes(t)) { showErr('Chagua RDA, Flex au Emergence kwa akiba.'); return; }
-                if (t === 'rda' && amt <= 100000) { showErr('RDA inahitaji zaidi ya TZS 100,000. Chagua Flex au Emergence.'); return; }
-            }
-        }
-        if (cur >= items.length - 1) {
-            const left = Math.round((net - sum()) * 100) / 100;
-            if (Math.abs(left) >= 0.5) { showErr('Mgao lazima ujumlishe ' + fmt(net) + '. Imebaki: ' + fmt(left) + ' — rudi nyuma kurekebisha.'); return; }
-            goPreview();
-            return;
-        }
-        showItem(cur + 1);
     }
     const allocStep = document.getElementById('allocStep');
     const previewStep = document.getElementById('previewStep');
@@ -487,18 +392,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function goBack(){
         previewStep.classList.add('hidden-step');
         allocStep.classList.remove('hidden-step');
-        showItem(items.length - 1);
+        hideErr();
+        recalc();
+        allocStep.scrollIntoView({behavior:'smooth', block:'start'});
     }
-    f.querySelectorAll('.wiz-confirm').forEach(b => b.addEventListener('click', () => confirmItem(b.closest('.wiz-item'))));
-    f.querySelectorAll('.fill-rest').forEach(b => b.addEventListener('click', () => {
-        const panel = b.closest('.wiz-item');
-        const input = panel ? panel.querySelector('input.alloc') : null;
-        if (input) { input.value = Math.max(0, Math.round(maxFor(input))); recalc(); input.focus(); }
-    }));
-    if (wizBack) wizBack.addEventListener('click', () => {
-        if (cur === 0) showChoice();
-        else showItem(cur - 1);
+    if (fillBtn) fillBtn.addEventListener('click', function(){
+        allocInputs.forEach(i => { i.value = (i.name === 'alloc_cash') ? Math.round(net) : 0; });
+        hideErr();
+        recalc();
     });
+    if (clearBtn) clearBtn.addEventListener('click', function(){
+        allocInputs.forEach(i => { i.value = 0; });
+        hideErr();
+        recalc();
+    });
+    if (wizBack) wizBack.addEventListener('click', showChoice);
     function showChoice(){
         if (choiceStep) choiceStep.classList.remove('hidden-step');
         if (allocStep) allocStep.classList.add('hidden-step');
@@ -509,7 +417,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (acceptBtn) acceptBtn.addEventListener('click', () => {
         if (choiceStep) choiceStep.classList.add('hidden-step');
         if (allocStep) allocStep.classList.remove('hidden-step');
-        showItem(0);
+        hideErr();
+        recalc();
+        if (allocStep) allocStep.scrollIntoView({behavior:'smooth', block:'start'});
     });
     if (rejectBtn) rejectBtn.addEventListener('click', () => {
         if (choiceStep) choiceStep.classList.add('hidden-step');
@@ -523,15 +433,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const rb = document.getElementById('rejectSubmitBtn');
         if (rb) { rb.disabled = true; rb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Inatuma…</span>'; }
     });
-    allocInputs.forEach(i => i.addEventListener('input', recalc));
+    allocInputs.forEach(i => i.addEventListener('input', () => { hideErr(); recalc(); }));
+    if (nextBtn) nextBtn.addEventListener('click', goPreview);
     if (backBtn) backBtn.addEventListener('click', goBack);
     recalc();
-    f.addEventListener('submit', function (e) {
-        if (previewStep && previewStep.classList.contains('hidden-step')) {
-            e.preventDefault();
-            confirmItem(items[cur]);
-            return;
-        }
+    f.addEventListener('submit', function () {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Inatuma…</span>';
     });
