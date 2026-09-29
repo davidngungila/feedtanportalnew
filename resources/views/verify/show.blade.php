@@ -275,6 +275,8 @@
                         </div>
                         <div class="alloc-grid">
                             <div class="field"><label>Pesa taslimu</label><div class="in-wrap"><i class="fa-solid fa-money-bill-wave"></i><input type="number" name="alloc_cash" class="alloc" min="0" step="100" value="0"></div></div>
+                            <div class="field"><label>Njia ya malipo (taslimu &gt; 0)</label><div class="in-wrap"><i class="fa-solid fa-mobile-screen"></i><select name="cash_method" id="cash_method"><option value="">— Chagua —</option><option value="mpesa">M-Pesa</option><option value="tigo">Tigo Pesa</option><option value="mixx">Mixx by Yas</option><option value="bank">Benki</option></select></div></div>
+                            <div class="field full"><label>Namba ya kupokea / akaunti (taslimu &gt; 0)</label><div class="in-wrap"><i class="fa-solid fa-hashtag"></i><input name="cash_account" id="cash_account" maxlength="50" placeholder="e.g. 0712 345 678 au akaunti ya benki"></div></div>
                             <div class="field"><label>Lipa SWF</label><div class="in-wrap"><i class="fa-solid fa-shield-heart"></i><input type="number" name="alloc_swf" class="alloc" min="0" step="100" value="0"></div></div>
                             <div class="field"><label>Rejesho (mkopo)</label><div class="in-wrap"><i class="fa-solid fa-hand-holding-dollar"></i><input type="number" name="alloc_loan" class="alloc" min="0" step="100" value="0"></div></div>
                             <div class="field"><label>Hisa za duka</label><div class="in-wrap"><i class="fa-solid fa-store"></i><input type="number" name="alloc_shares" class="alloc" min="0" step="100" value="0"></div></div>
@@ -376,6 +378,12 @@ document.addEventListener('DOMContentLoaded', function () {
         let neg = false;
         allocInputs.forEach(i => { if (parseFloat(i.value) < 0) neg = true; });
         if (neg) return 'Kiasi hakiwezi kuwa namba hasi (chini ya 0).';
+        if (val('alloc_cash') > 0) {
+            const m = (f.querySelector('#cash_method') || {}).value || '';
+            if (!['mpesa', 'tigo', 'mixx', 'bank'].includes(m)) return 'Chagua njia ya malipo ya taslimu (M-Pesa, Tigo Pesa, Mixx by Yas au Benki).';
+            const acc = ((f.querySelector('#cash_account') || {}).value || '').trim();
+            if (acc === '') return 'Weka namba ya kupokea malipo (au akaunti ya benki).';
+        }
         const left = Math.round((net - sum()) * 100) / 100;
         if (Math.abs(left) >= 0.5) return 'Mgao lazima ujumlishe ' + fmt(net) + '. Imebaki: ' + fmt(left) + '.';
         if (val('alloc_reinvest') > 0 && !['2','4','6'].includes(f.querySelector('#reinvest_term').value)) return 'Chagua miaka 2, 4 au 6 kwa kuwekeza tena.';
@@ -400,6 +408,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const amt = val(name);
             if (amt <= 0) return;
             let extra = '';
+            if (name === 'alloc_cash') {
+                const methods = {mpesa: 'M-Pesa', tigo: 'Tigo Pesa', mixx: 'Mixx by Yas', bank: 'Benki'};
+                const m = (f.querySelector('#cash_method') || {}).value || '';
+                const acc = ((f.querySelector('#cash_account') || {}).value || '').trim();
+                extra = ' (' + (methods[m] || m) + (acc ? ' · ' + acc : '') + ')';
+            }
             if (name === 'alloc_reinvest') extra = ' (miaka ' + f.querySelector('#reinvest_term').value + ')';
             if (name === 'alloc_savings') extra = ' (' + f.querySelector('#savings_type').value.toUpperCase() + ')';
             html += '<div class="kv"><div class="k-ico"><i class="fa-solid ' + icon + '"></i></div><div class="k">' + label + extra + '</div><div class="v">' + fmt(amt) + '</div></div>';

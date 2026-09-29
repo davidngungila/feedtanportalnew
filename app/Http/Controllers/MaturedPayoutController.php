@@ -358,11 +358,13 @@ class MaturedPayoutController extends Controller
         switch ($kind) {
             case 'cash':
                 if ((float) $item > 0 && $payout->investment_id) {
+                    $via = $payout->allocation['cash_method'] ?? null;
+                    $acct = $payout->allocation['cash_account'] ?? null;
                     InvestmentReturn::create([
                         'investment_id' => $payout->investment_id,
                         'amount' => (float) $item,
                         'paid_at' => now()->toDateString(),
-                        'notes' => 'Matured payout cash '.$payout->verify_code,
+                        'notes' => 'Matured payout cash '.$payout->verify_code.($via ? ' via '.$via.($acct ? ' '.$acct : '') : ''),
                         'paid_by' => auth()->id(),
                     ]);
                 }

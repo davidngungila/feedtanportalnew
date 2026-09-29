@@ -286,6 +286,8 @@ class CouponPaymentController extends Controller
             }
 
             if ((float) $payout->net_cash > 0 && $cash) {
+                $via = $payout->allocation['cash_method'] ?? null;
+                $acct = $payout->allocation['cash_account'] ?? null;
                 $tx = \App\Models\FinanceTransaction::create([
                     'reference' => FinancePosting::reference('FT'),
                     'type' => 'expense',
@@ -294,7 +296,7 @@ class CouponPaymentController extends Controller
                     'member_id' => $member->id,
                     'amount' => (float) $payout->net_cash,
                     'transacted_at' => now()->toDateString(),
-                    'description' => 'Coupon payout cash '.$payout->verify_code,
+                    'description' => 'Coupon payout cash '.$payout->verify_code.($via ? ' via '.$via.($acct ? ' '.$acct : '') : ''),
                     'created_by' => auth()->id(),
                 ]);
                 FinancePosting::postTransaction($tx->fresh());

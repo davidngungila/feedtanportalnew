@@ -107,11 +107,26 @@ class InvestmentPayout extends Model
         return is_array($this->allocation) ? 'No split — TZS 0' : '—';
     }
 
+    public const CASH_METHODS = [
+        'mpesa' => 'M-Pesa',
+        'tigo' => 'Tigo Pesa',
+        'mixx' => 'Mixx by Yas',
+        'bank' => 'Benki',
+    ];
+
     public function allocationRows(): array
     {
         $a = $this->allocation ?? [];
+        $cashLabel = 'Taslimu';
+        if (! empty($a['cash_method'])) {
+            $cashLabel .= ' ('.(self::CASH_METHODS[$a['cash_method']] ?? $a['cash_method']);
+            if (! empty($a['cash_account'])) {
+                $cashLabel .= ' · '.$a['cash_account'];
+            }
+            $cashLabel .= ')';
+        }
         $labels = [
-            'cash' => 'Taslimu',
+            'cash' => $cashLabel,
             'swf' => 'SWF',
             'loan' => 'Mkopo (rejesho)',
             'shares' => 'Hisa za duka',
