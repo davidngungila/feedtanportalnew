@@ -260,7 +260,7 @@
                     </form>
                 </div>
                 @if($payout->net_cash > 0)
-                <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}">
+                <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}" novalidate>
                     @csrf
                     <div id="allocStep" class="hidden-step">
                         <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Jaza mgawanyo wako — sehemu zote kwa ukurasa mmoja</div>
@@ -355,6 +355,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const rejectBtn = document.getElementById('rejectBtn');
     const rejectBackBtn = document.getElementById('rejectBackBtn');
     function checkRules(){
+        let neg = false;
+        allocInputs.forEach(i => { if (parseFloat(i.value) < 0) neg = true; });
+        if (neg) return 'Kiasi hakiwezi kuwa namba hasi (chini ya 0).';
         const left = Math.round((net - sum()) * 100) / 100;
         if (Math.abs(left) >= 0.5) return 'Mgao lazima ujumlishe ' + fmt(net) + '. Imebaki: ' + fmt(left) + '.';
         if (val('alloc_reinvest') > 0 && !['2','4','6'].includes(f.querySelector('#reinvest_term').value)) return 'Chagua miaka 2, 4 au 6 kwa kuwekeza tena.';
