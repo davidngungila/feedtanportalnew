@@ -158,8 +158,23 @@ class MemberOnboardingTest extends TestCase
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($user->avatar_path);
     }
 
-    public function test_staff_can_review_full_file_and_approval_carries_details(): void
+    public function test_avatar_falls_back_to_application_passport(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::create(['name' => 'F', 'email' => 'f@test.local', 'password' => 'secret123', 'role' => 'member']);
+        $photo = \Illuminate\Http\UploadedFile::fake()->image('face.jpg', 400, 400)->store('applications', 'public');
+        MemberApplication::create([
+            'user_id' => $user->id, 'current_step' => 5, 'name' => 'F Person',
+            'phone' => '0711000050', 'email' => 'f@test.local', 'status' => 'approved',
+            'attachments' => ['passport' => $photo],
+        ]);
+
+        $this->assertNull($user->avatar_path);
+        $this->assertStringContainsString('applications/', $user->fresh()->avatarUrl());
+        $this->actingAs($user)->get(route('account.index'))->assertOk()->assertSee('applications/', false);
+    }
+
+    public function test_staff_can_review_full_file_and_approval_carries_details(): void    {
         $admin = $this->makeAdmin();
         $app = MemberApplication::create([
             'current_step' => 5, 'name' => 'Full File', 'phone' => '0711000020',

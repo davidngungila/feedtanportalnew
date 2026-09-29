@@ -30,11 +30,27 @@ class User extends Authenticatable
 
     public function avatarUrl(): ?string
     {
-        if (! $this->avatar_path) {
-            return null;
+        if ($this->avatar_path) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
         }
 
-        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path);
+        // Fall back to the passport photo from the member application,
+        // so it shows in the header, account page and portal profile.
+        try {
+            $app = MemberApplication::where(function ($q) {
+                $q->where('user_id', $this->id);
+                if ($this->email) {
+                    $q->orWhere(fn ($w) => $w->whereNull('user_id')->where('email', $this->email));
+                }
+            })->latest('id')->first();
+            $passport = $app?->attachments['passport'] ?? null;
+            if ($passport && \Illuminate\Support\Facades\Storage::disk('public')->exists($passport)) {
+                return \Illuminate\Support\Facades\Storage::disk('public')->url($passport);
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
     }
 
     public function roles(): BelongsToMany
