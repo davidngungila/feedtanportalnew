@@ -61,6 +61,8 @@
         .amount-card{background:var(--white);border-radius:var(--r-lg);box-shadow:var(--shadow-md);border:1px solid var(--line);margin:-52px 12px 0;padding:24px 22px;text-align:center;position:relative;z-index:2}
         .amount-card .lbl{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
         .amount-card .val{font-size:38px;font-weight:800;color:var(--terracotta-600);margin:6px 0 2px;letter-spacing:-.02em;overflow-wrap:anywhere}
+        .amount-card .val.gross{font-size:26px;color:var(--coffee-900)}
+        .amount-card .deduct{font-size:14px;font-weight:800;color:var(--danger);margin-top:2px}
         .amount-card .sub{font-size:12.5px;color:var(--ink-soft)}
         /* ---------- stepper ---------- */
         /* ---------- active stage only ---------- */
@@ -162,9 +164,13 @@
     </header>
 
     <div class="amount-card anim">
-        <div class="lbl">Kiasi halisi kwako</div>
+        <div class="lbl">Gawio la jumla</div>
+        <div class="val gross">TZS {{ number_format($payout->amount, 0) }}</div>
+        @php $deductTotal = $payout->loan_installment + $payout->swf_deduction + $payout->fines_deduction + $payout->tshirt_deduction + $payout->capital_cmg; @endphp
+        <div class="deduct">− Makato: TZS {{ number_format($deductTotal, 0) }}</div>
+        <div class="lbl" style="margin-top:10px">Kiasi halisi kwako (baada ya makato)</div>
         <div class="val">TZS {{ number_format($payout->net_cash, 0) }}</div>
-        <div class="sub">baada ya makato yote · {{ $payout->member->name ?? '—' }}</div>
+        <div class="sub">{{ $payout->member->name ?? '—' }}</div>
     </div>
 
     @php
