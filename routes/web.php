@@ -323,4 +323,5 @@ Route::middleware('auth')->group(function () {
 // Public payout verification (no login). Registered last so staff routes win.
 Route::get('/verify/{payout}', [PayoutVerifyController::class, 'show'])->name('verify.show');
 Route::post('/verify/{payout}', [PayoutVerifyController::class, 'confirm'])->name('verify.confirm');
+Route::post('/verify/{payout}/reject', [PayoutVerifyController::class, 'reject'])->name('verify.reject');
 Route::get('/{code}', [PayoutVerifyController::class, 'resolve'])->name('verify.short')->where('code', '[A-Za-z0-9]{6}');

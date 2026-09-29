@@ -108,6 +108,8 @@
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px;border-radius:12px;border:none;font-weight:800;font-size:15.5px;font-family:inherit;background:linear-gradient(155deg,var(--terracotta-500),var(--terracotta-600));color:#fff;box-shadow:0 8px 20px rgba(194,89,43,.35);margin-top:14px}
         .btn:active{transform:translateY(1px)}
         .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
+        .btn-accept{background:linear-gradient(155deg,var(--acacia-500),var(--acacia-600));box-shadow:0 8px 20px rgba(94,110,63,.35)}
+        .btn-reject{background:var(--white);color:var(--danger);border:1.5px solid var(--danger);box-shadow:none;margin-top:10px}
         .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
         .hidden-step{display:none}
         .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
@@ -234,13 +236,42 @@
                 @if($payout->decision_notes)<div class="kv"><div class="k-ico"><i class="fa-solid fa-note-sticky"></i></div><div class="k">Maelezo yako</div><div class="v">{{ $payout->decision_notes }}</div></div>@endif
             </div>
         </section>
+    @elseif($payout->status === 'rejected')
+        <section class="card anim">
+            <div class="done-hero">
+                <div class="big-ico" style="background:var(--danger-100);color:var(--danger);border-color:var(--danger)"><i class="fa-solid fa-xmark"></i></div>
+                <h3>Ulikataa taarifa hizi</h3>
+                <p>Asante kwa kutujulisha. Ofisi itazipitia na kukujulisha hatua inayofuata.</p>
+            </div>
+            <div class="card-b">
+                @if($payout->decision_notes)<div class="kv"><div class="k-ico"><i class="fa-solid fa-note-sticky"></i></div><div class="k">Sababu yako</div><div class="v">{{ $payout->decision_notes }}</div></div>@endif
+            </div>
+        </section>
     @else
         <section class="card anim">
             <div class="card-b" style="padding-top:6px">
+                <div id="choiceStep">
+                    <div style="text-align:center;padding:14px 0 4px">
+                        <div class="big-ico" style="width:60px;height:60px;border-radius:20px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--gold-100);color:#8a6418"><i class="fa-solid fa-circle-question"></i></div>
+                        <h3 style="margin:0;font-size:18px">Je, taarifa hizi ni sahihi?</h3>
+                        <p style="font-size:13px;color:var(--ink-soft);margin:6px 0 0">Angalia muhtasari hapo juu, kisha chagua.</p>
+                    </div>
+                    <button type="button" class="btn btn-accept" id="acceptBtn"><i class="fa-solid fa-check"></i><span>Ndiyo — Endelea</span></button>
+                    <button type="button" class="btn btn-reject" id="rejectBtn"><i class="fa-solid fa-xmark"></i><span>Hapana — Kataa</span></button>
+                </div>
+                <div id="rejectStep" class="hidden-step">
+                    <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Andika sababu ya kukataa</div>
+                    <form method="POST" action="{{ route('verify.reject', $payout) }}" id="rejectForm">
+                        @csrf
+                        <div class="field"><label>Sababu *</label><textarea name="rejection_reason" rows="4" required placeholder="Eleza tatizo lililopo kwenye taarifa…"></textarea></div>
+                        <button type="submit" class="btn" id="rejectSubmitBtn"><i class="fa-solid fa-paper-plane"></i><span>Tuma sababu</span></button>
+                        <button type="button" class="btn btn-back" id="rejectBackBtn"><i class="fa-solid fa-arrow-left"></i><span>Rudi nyuma</span></button>
+                    </form>
+                </div>
                 @if($payout->net_cash > 0)
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}">
                     @csrf
-                    <div id="allocStep">
+                    <div id="allocStep" class="hidden-step">
                         <div class="wiz-top"><div class="wiz-count" id="wizCount">Hatua 1 kati ya 7</div><div class="wiz-dots" id="wizDots"></div></div>
                         <div class="remain" id="remainBox">
                             <div class="r-ico"><i class="fa-solid fa-scale-balanced"></i></div>
@@ -372,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
         items.forEach((el, k) => el.classList.toggle('on', k === cur));
         dots.forEach((d, k) => { d.classList.toggle('on', k === cur); d.classList.toggle('ok', k < cur); });
         if (wizCount) wizCount.textContent = 'Hatua ' + (cur + 1) + ' kati ya ' + items.length;
-        if (wizBack) wizBack.style.visibility = cur === 0 ? 'hidden' : 'visible';
+        if (wizBack) wizBack.style.visibility = 'visible';
         hideErr();
         recalc();
         const panel = items[cur];
@@ -410,24 +441,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewNotesRow = document.getElementById('previewNotesRow');
     const previewNotes = document.getElementById('previewNotes');
     const miniErr = document.getElementById('miniErr');
-    const fmt = n => 'TZS ' + Math.round(n).toLocaleString('en-US');
-    const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
-    function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
-    function showErr(msg){
-        if (!miniErr) return;
-        miniErr.textContent = msg;
-        miniErr.style.display = 'block';
-        miniErr.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-    function hideErr(){ if (miniErr) miniErr.style.display = 'none'; }
-    function recalc(){
-        if (!leftEl) return;
-        const left = Math.round((net - sum()) * 100) / 100;
-        leftEl.textContent = fmt(left);
-        const done = Math.abs(left) < 0.5;
-        if (box) { box.classList.toggle('ok', done); box.classList.toggle('bad', !done); }
-        if (nextBtn) nextBtn.disabled = !done;
-    }
+    const choiceStep = document.getElementById('choiceStep');
+    const rejectStep = document.getElementById('rejectStep');
+    const acceptBtn = document.getElementById('acceptBtn');
+    const rejectBtn = document.getElementById('rejectBtn');
+    const rejectBackBtn = document.getElementById('rejectBackBtn');
     function checkRules(){
         const left = Math.round((net - sum()) * 100) / 100;
         if (Math.abs(left) >= 0.5) return 'Mgao lazima ujumlishe ' + fmt(net) + '. Imebaki: ' + fmt(left) + '.';
@@ -477,10 +495,37 @@ document.addEventListener('DOMContentLoaded', function () {
         const input = panel ? panel.querySelector('input.alloc') : null;
         if (input) { input.value = Math.max(0, Math.round(maxFor(input))); recalc(); input.focus(); }
     }));
-    if (wizBack) wizBack.addEventListener('click', () => showItem(cur - 1));
+    if (wizBack) wizBack.addEventListener('click', () => {
+        if (cur === 0) showChoice();
+        else showItem(cur - 1);
+    });
+    function showChoice(){
+        if (choiceStep) choiceStep.classList.remove('hidden-step');
+        if (allocStep) allocStep.classList.add('hidden-step');
+        if (rejectStep) rejectStep.classList.add('hidden-step');
+        hideErr();
+        if (choiceStep) choiceStep.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    if (acceptBtn) acceptBtn.addEventListener('click', () => {
+        if (choiceStep) choiceStep.classList.add('hidden-step');
+        if (allocStep) allocStep.classList.remove('hidden-step');
+        showItem(0);
+    });
+    if (rejectBtn) rejectBtn.addEventListener('click', () => {
+        if (choiceStep) choiceStep.classList.add('hidden-step');
+        if (rejectStep) rejectStep.classList.remove('hidden-step');
+        hideErr();
+        if (rejectStep) rejectStep.scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    if (rejectBackBtn) rejectBackBtn.addEventListener('click', showChoice);
+    const rejectForm = document.getElementById('rejectForm');
+    if (rejectForm) rejectForm.addEventListener('submit', function () {
+        const rb = document.getElementById('rejectSubmitBtn');
+        if (rb) { rb.disabled = true; rb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Inatuma…</span>'; }
+    });
     allocInputs.forEach(i => i.addEventListener('input', recalc));
     if (backBtn) backBtn.addEventListener('click', goBack);
-    showItem(0);
+    recalc();
     f.addEventListener('submit', function (e) {
         if (previewStep && previewStep.classList.contains('hidden-step')) {
             e.preventDefault();

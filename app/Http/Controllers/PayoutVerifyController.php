@@ -26,6 +26,9 @@ class PayoutVerifyController extends Controller
         if ($payout->status === 'paid') {
             return back()->withErrors(['payout' => 'This payout was already paid.']);
         }
+        if ($payout->status === 'rejected') {
+            return back()->withErrors(['payout' => 'You already rejected this payout.']);
+        }
         if ($payout->status === 'verified') {
             return back()->withErrors(['payout' => 'You already verified on '.$payout->verified_at?->format('d M Y').'.']);
         }
@@ -84,5 +87,24 @@ class PayoutVerifyController extends Controller
                 ? 'Asante! Uthibitisho wako umepokelewa.'
                 : 'Asante! Mgawanyo wako umepokelewa: '.$summary.'.'
         );
+    }
+
+    public function reject(Request $request, InvestmentPayout $payout)
+    {
+        if ($payout->status !== 'pending') {
+            return back()->withErrors(['payout' => 'Tayari umeshajibu taarifa hizi (status: '.$payout->status.').']);
+        }
+
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'min:3', 'max:1000'],
+        ]);
+
+        $payout->update([
+            'status' => 'rejected',
+            'decision' => 'rejected',
+            'decision_notes' => $data['rejection_reason'],
+        ]);
+
+        return redirect()->route('verify.show', $payout)->with('status', 'Asante! Sababu yako imepokelewa — ofisi itaipitia.');
     }
 }

@@ -69,6 +69,7 @@ class InvestmentPayout extends Model
         }
 
         return match ($this->decision) {
+            'rejected' => 'Imekataliwa',
             'receive_cash' => 'Receive cash now',
             'reinvest' => 'Reinvest',
             'keep_savings' => 'Keep as savings',
