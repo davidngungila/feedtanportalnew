@@ -109,10 +109,6 @@
         .btn:active{transform:translateY(1px)}
         .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
         .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
-        .substeps{display:flex;gap:8px;margin:14px 20px 0}
-        .substep{flex:1;text-align:center;font-size:11px;font-weight:800;color:var(--ink-soft);padding:8px 4px;border-radius:20px;background:var(--sand-100)}
-        .substep.on{background:var(--terracotta-600);color:#fff}
-        .substep.ok{background:var(--acacia-100);color:var(--acacia-600)}
         .hidden-step{display:none}
         .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
         .wiz-top{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
@@ -240,15 +236,10 @@
         </section>
     @else
         <section class="card anim">
-            <div class="card-h">
-                <div class="ico"><i class="fa-solid fa-sliders"></i></div>
-                <div><h3>Gawa salio lako</h3><p>Mgao lazima ujumlishe @money($payout->net_cash)</p></div>
-            </div>
-            <div class="card-b" style="padding-top:14px">
+            <div class="card-b" style="padding-top:6px">
                 @if($payout->net_cash > 0)
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}">
                     @csrf
-                    <div class="substeps"><div class="substep on" id="subA">1 · Gawa</div><div class="substep" id="subB">2 · Hakiki</div><div class="substep" id="subC">3 · Tuma</div></div>
                     <div id="allocStep">
                         <div class="wiz-top"><div class="wiz-count" id="wizCount">Hatua 1 kati ya 7</div><div class="wiz-dots" id="wizDots"></div></div>
                         <div class="remain" id="remainBox">
@@ -419,9 +410,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewNotesRow = document.getElementById('previewNotesRow');
     const previewNotes = document.getElementById('previewNotes');
     const miniErr = document.getElementById('miniErr');
-    const subA = document.getElementById('subA');
-    const subB = document.getElementById('subB');
-    const subC = document.getElementById('subC');
     const fmt = n => 'TZS ' + Math.round(n).toLocaleString('en-US');
     const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
     function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
@@ -476,17 +464,11 @@ document.addEventListener('DOMContentLoaded', function () {
         else { previewNotesRow.style.display = 'none'; }
         allocStep.classList.add('hidden-step');
         previewStep.classList.remove('hidden-step');
-        if (subA) { subA.classList.remove('on'); subA.classList.add('ok'); }
-        if (subB) { subB.classList.add('on'); subB.classList.remove('ok'); }
-        if (subC) { subC.classList.add('on'); }
         previewStep.scrollIntoView({behavior:'smooth', block:'start'});
     }
     function goBack(){
         previewStep.classList.add('hidden-step');
         allocStep.classList.remove('hidden-step');
-        if (subA) { subA.classList.add('on'); subA.classList.remove('ok'); }
-        if (subB) { subB.classList.remove('on'); }
-        if (subC) { subC.classList.remove('on'); }
         showItem(items.length - 1);
     }
     f.querySelectorAll('.wiz-confirm').forEach(b => b.addEventListener('click', () => confirmItem(b.closest('.wiz-item'))));

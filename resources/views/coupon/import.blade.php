@@ -72,11 +72,13 @@
                         <form method="POST" action="{{ route('coupon.sms.single', $p) }}">@csrf<button class="btn btn-ghost btn-sm" type="submit">Send</button></form>
                         @else<span class="cell-sub">—</span>@endif
                     </td>
-                    <td>@if($p->status === 'verified')
+                    <td><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;">
+                        <a href="{{ route('coupon.show', $p) }}" class="btn btn-ghost btn-sm">View</a>
+                        @if($p->status === 'verified')
                         <form method="POST" action="{{ route('coupon.pay', $p) }}" onsubmit="return confirm('Pay @money($p->net_cash) and apply deductions?')">@csrf<button class="btn btn-primary btn-sm" type="submit">Pay</button></form>
                         @elseif($p->status === 'paid')<span class="cell-sub">{{ $p->paid_at?->format('d M Y') }}</span>
                         @else<span class="cell-sub">Awaiting SMS verify</span>@endif
-                    </td>
+                    </div></td>
                 </tr>
                 @empty<tr><td colspan="9" class="empty-state">No coupon payments imported yet.</td></tr>@endforelse
             </tbody>
