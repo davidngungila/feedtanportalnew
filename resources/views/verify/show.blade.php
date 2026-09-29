@@ -124,6 +124,14 @@
         .note i{color:var(--gold-500);margin-top:2px}
         .foot{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:20px;display:flex;align-items:center;justify-content:center;gap:6px}
         .foot i{color:var(--acacia-600)}
+        /* ---------- success popup modal ---------- */
+        .modal-bg{position:fixed;inset:0;z-index:500;background:rgba(36,20,8,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+        .modal-bg.show{display:flex}
+        .modal-box{background:var(--sand-50);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);width:100%;max-width:400px;padding:30px 26px 24px;text-align:center;animation:popIn .3s cubic-bezier(.2,.8,.2,1)}
+        @keyframes popIn{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .modal-box .big-ico{width:70px;height:70px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--acacia-100);color:var(--acacia-600);border:2px solid var(--acacia-500)}
+        .modal-box h3{margin:0;font-size:19px}
+        .modal-box p{font-size:13.5px;color:var(--coffee-700);line-height:1.6;margin:8px 0 0}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .anim{animation:fadeUp .4s ease}
         @media (max-width:520px){
@@ -174,7 +182,16 @@
     @endphp
     <div class="stage-now stage-{{ $stage[2] }}"><i class="fa-solid {{ $stage[1] }}"></i><span>{{ $stage[0] }}</span></div>
 
-    @if(session('status'))<div class="ok-banner anim">{{ session('status') }}</div>@endif
+    @if(session('status'))
+    <div class="modal-bg show" id="successModal">
+        <div class="modal-box">
+            <div class="big-ico"><i class="fa-solid fa-check"></i></div>
+            <h3>Hongera!</h3>
+            <p>{{ session('status') }}</p>
+            <button type="button" class="btn" id="successOkBtn" style="margin-top:18px"><span>Sawa</span></button>
+        </div>
+    </div>
+    @endif
     @if($errors->any())<div class="err-banner anim">{{ $errors->first() }}</div>@endif
 
     <section class="card anim">
@@ -313,6 +330,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const sm = document.getElementById('successModal');
+    if (sm) {
+        const ok = document.getElementById('successOkBtn');
+        const close = () => sm.classList.remove('show');
+        if (ok) ok.addEventListener('click', close);
+        sm.addEventListener('click', e => { if (e.target === sm) close(); });
+    }
     const f = document.getElementById('verifyForm');
     if (!f) return;
     const net = parseFloat(f.dataset.net) || 0;
