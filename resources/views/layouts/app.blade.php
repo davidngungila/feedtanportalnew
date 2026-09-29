@@ -910,9 +910,6 @@
             </header>
 
             <div class="view-wrap">
-                @if (session('status'))
-                    <div style="background:var(--acacia-100);color:var(--acacia-600);border-radius:10px;padding:12px 16px;font-size:13.5px;font-weight:600;margin-bottom:20px;">{{ session('status') }}</div>
-                @endif
                 @if ($errors->any())
                     <div style="background:var(--danger-100);color:var(--danger);border-radius:10px;padding:12px 16px;font-size:13.5px;font-weight:600;margin-bottom:20px;">
                         {{ $errors->first() }}
@@ -1042,7 +1039,7 @@
             el.className = 'toast ' + (type==='success'?'success':type==='error'?'error':'');
             el.innerHTML = (type==='success' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>') + '<span>'+msg+'</span>';
             host.appendChild(el);
-            setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='all .25s'; setTimeout(()=>el.remove(),250); }, 3200);
+            setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(20px)'; el.style.transition='all .25s'; setTimeout(()=>el.remove(),250); }, type==='success' ? 5000 : 3200);
         }
 
         let modalStack = 400;
@@ -1207,6 +1204,11 @@
             form.querySelectorAll('[type="submit"]').forEach(b => { b.disabled = true; b.classList.add('is-loading'); });
         });
     </script>
+    @if (session('status'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () { toast(@json(session('status')), 'success'); });
+    </script>
+    @endif
     @yield('scripts')
 </body>
 </html>
