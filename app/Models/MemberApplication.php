@@ -11,8 +11,27 @@ class MemberApplication extends Model
     use EncryptsRouteKey;
     protected $fillable = [
         'user_id', 'current_step', 'name', 'phone', 'email', 'national_id', 'address',
+        'sex', 'marital_status', 'dob', 'job', 'employer', 'statement_channel',
+        'bank_name', 'bank_account',
         'member_type_id', 'member_group_id', 'status', 'notes', 'reviewed_by',
+        'biography', 'referrer', 'consider_ordinary',
+        'group_name', 'group_registered', 'group_leaders', 'group_bank_account', 'group_contacts',
+        'savings_goal', 'goal_amount', 'goal_months', 'goal_start',
+        'contributions', 'beneficiaries', 'attachments',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'dob' => 'date',
+            'goal_start' => 'date',
+            'consider_ordinary' => 'boolean',
+            'group_registered' => 'boolean',
+            'contributions' => 'array',
+            'beneficiaries' => 'array',
+            'attachments' => 'array',
+        ];
+    }
 
     public function memberType(): BelongsTo
     {

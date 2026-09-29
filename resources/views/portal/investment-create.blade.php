@@ -9,7 +9,7 @@
         <div class="settings-panel"><h3>Investment details</h3>
             <form method="POST" action="{{ route('portal.investments.store') }}">@csrf
                 <div class="field"><label>Product *</label>
-                    <select name="investment_product_id" required><option value="">Select…</option>@foreach($products as $p)<option value="{{ $p->id }}">{{ $p->name }} · {{ $p->return_rate }}%@if($p->min_amount) · min @money($p->min_amount)@endif@if($p->duration_months) · {{ $p->duration_months }} months@endif</option>@endforeach</select>
+                    <select name="investment_product_id" required><option value="">Select…</option>@foreach($products as $p)<option value="{{ $p->id }}">{{ $p->name }} · {{ $p->return_rate }}%@if($p->min_amount) · min @money($p->min_amount) @endif @if($p->duration_months) · {{ $p->duration_months }} months @endif</option>@endforeach</select>
                 </div>
                 <div class="form-row">
                     <div class="field"><label>Amount (TZS) *</label><input type="number" name="amount" min="1000" step="100" required placeholder="e.g. 200000"></div>

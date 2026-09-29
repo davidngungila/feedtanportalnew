@@ -15,6 +15,7 @@
                 <td>{{ $a->memberType->name ?? '—' }} / {{ $a->memberGroup->name ?? '—' }}</td>
                 <td><span class="tag {{ status_badge($a->status) }}">{{ ucfirst($a->status) }}</span></td>
                 <td><div class="row-actions" style="justify-content:flex-end;">
+                    <a href="{{ route('member-applications.show', $a) }}"><button type="button" title="Review full file">Open</button></a>
                     @if($a->status === 'pending')
                     <form method="POST" action="{{ route('member-applications.approve', $a) }}">@csrf<button class="btn btn-primary btn-sm" type="submit">Approve</button></form>
                     <form method="POST" action="{{ route('member-applications.update', $a) }}">@csrf @method('PUT')<input type="hidden" name="status" value="rejected"><button class="btn btn-ghost btn-sm" type="submit">Reject</button></form>

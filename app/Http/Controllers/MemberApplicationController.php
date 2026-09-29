@@ -51,6 +51,13 @@ class MemberApplicationController extends Controller
         return redirect()->route('member-applications.index')->with('status', 'Application submitted.');
     }
 
+    public function show(MemberApplication $memberApplication)
+    {
+        $memberApplication->load(['memberType', 'memberGroup']);
+
+        return view('member-applications.show', ['application' => $memberApplication]);
+    }
+
     public function update(Request $request, MemberApplication $memberApplication)
     {
         $data = $request->validate([
@@ -75,9 +82,17 @@ class MemberApplicationController extends Controller
                 'address' => $memberApplication->address,
                 'join_date' => now()->toDateString(),
                 'status' => 'active',
-                'notes' => $memberApplication->notes,
-                'created_by' => auth()->id(),
-            ]);
+            'notes' => $memberApplication->notes,
+            'created_by' => auth()->id(),
+        ]);
+        $extra = array_filter([
+            $memberApplication->biography ? 'Bio: '.$memberApplication->biography : null,
+            $memberApplication->referrer ? 'Introduced by: '.$memberApplication->referrer : null,
+            $memberApplication->bank_name ? 'Bank: '.$memberApplication->bank_name.' '.($memberApplication->bank_account ?? '') : null,
+        ]);
+        if ($extra) {
+            $member->update(['notes' => trim(($member->notes ? $member->notes."\n" : '').implode("\n", $extra))]);
+        }
 
             if ($memberApplication->member_group_id) {
                 $member->groups()->sync([$memberApplication->member_group_id]);

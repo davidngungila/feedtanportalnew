@@ -9,8 +9,8 @@
     <div class="balance-strip" style="grid-template-columns:repeat(4,1fr);">
         <div class="balance-box" style="border-color:var(--acacia-500);"><div class="bb-label">✓ Step 1 · Account</div><div class="bb-amount" style="font-size:15px;">Created</div><div class="bb-sub">{{ $app->created_at->format('d M Y') }}</div></div>
         <div class="balance-box" style="border-color:var(--acacia-500);"><div class="bb-label">✓ Step 2 · Details</div><div class="bb-amount" style="font-size:15px;">Submitted</div><div class="bb-sub">{{ $app->updated_at->format('d M Y') }}</div></div>
-        <div class="balance-box" style="@if($app->status === 'pending')border-color:var(--gold-500);box-shadow:0 0 0 3px var(--gold-100);@elseif($app->status === 'approved')border-color:var(--acacia-500);@elseif($app->status === 'rejected')border-color:var(--danger);@endif"><div class="bb-label">@if($app->status === 'pending')● Step 3 · Review @elseif($app->status === 'approved')✓ Step 3 · Review @else Step 3 · Review@endif</div><div class="bb-amount" style="font-size:15px;">{{ ucfirst($app->status) }}</div><div class="bb-sub">@if($app->reviewed_by)By {{ \App\Models\User::find($app->reviewed_by)->name ?? 'office' }}@else Awaiting office @endif</div></div>
-        <div class="balance-box" style="@if($app->status === 'approved')border-color:var(--acacia-500);@endif"><div class="bb-label">@if($app->status === 'approved')✓ Step 4 · Services @else ○ Step 4 · Services@endif</div><div class="bb-amount" style="font-size:15px;">@if($app->status === 'approved') Unlocked @else Locked @endif</div><div class="bb-sub">@if($app->status === 'approved' && $member){{ $member->member_no }}@else Loans · savings · investments · SWF @endif</div></div>
+        <div class="balance-box" style="@if($app->status === 'pending')border-color:var(--gold-500);box-shadow:0 0 0 3px var(--gold-100);@elseif($app->status === 'approved')border-color:var(--acacia-500);@elseif($app->status === 'rejected')border-color:var(--danger);@endif"><div class="bb-label">@if($app->status === 'pending')● Step 3 · Review @elseif($app->status === 'approved')✓ Step 3 · Review @else Step 3 · Review @endif</div><div class="bb-amount" style="font-size:15px;">{{ ucfirst($app->status) }}</div><div class="bb-sub">@if($app->reviewed_by)By {{ \App\Models\User::find($app->reviewed_by)->name ?? 'office' }}@else Awaiting office @endif</div></div>
+        <div class="balance-box" style="@if($app->status === 'approved')border-color:var(--acacia-500);@endif"><div class="bb-label">@if($app->status === 'approved')✓ Step 4 · Services @else ○ Step 4 · Services @endif</div><div class="bb-amount" style="font-size:15px;">@if($app->status === 'approved') Unlocked @else Locked @endif</div><div class="bb-sub">@if($app->status === 'approved' && $member){{ $member->member_no }}@else Loans · savings · investments · SWF @endif</div></div>
     </div>
 
     <div class="panel-grid">
@@ -19,7 +19,11 @@
                 @if($app->status === 'pending')
                 <p style="font-size:14px;color:var(--ink-soft);line-height:1.7;">Your application is with the office for review. You will get full access to loans, savings, investments and SWF once approved. Nothing more to do — check back here for the decision.</p>
                 @elseif($app->status === 'approved')
-                <p style="font-size:14px;color:var(--ink-soft);line-height:1.7;">Karibu! Your membership was approved@if($member) — member number <b>{{ $member->member_no }}</b>, joined {{ $member->join_date?->format('d M Y') }}@endif. Your services menu is now open in the sidebar.</p>
+                <p style="font-size:14px;color:var(--ink-soft);line-height:1.7;">Karibu! Your membership was approved
+                @if($member)
+                — member number <b>{{ $member->member_no }}</b>, joined {{ $member->join_date?->format('d M Y') }}
+                @endif
+                . Your services menu is now open in the sidebar.</p>
                 <div class="view-actions" style="margin-top:14px;"><a href="{{ route('portal.home') }}" class="btn btn-primary">Open my portal</a></div>
                 @elseif($app->status === 'rejected')
                 <p style="font-size:14px;color:var(--ink-soft);line-height:1.7;">This application was not approved. You can update your details and send it again — your previous answers are kept.</p>

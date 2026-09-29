@@ -49,16 +49,116 @@ class MemberOnboardingTest extends TestCase
         $user = User::create(['name' => 'A', 'email' => 'a@test.local', 'password' => 'secret123', 'role' => 'applicant']);
         $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
 
-        $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect()->headers->get('Location'))));
-        $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza'])->assertRedirect()->headers->get('Location'))));
-        $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), [])->assertRedirect()->headers->get('Location'))));
-        $this->actingAs($user)->get(route('join.step', eid(4)))->assertOk();
+        $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['name' => 'A Person', 'phone' => '0711000002', 'sex' => 'male'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza', 'job' => 'Trader'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), ['bank_name' => 'CRDB', 'pay_entrance' => '1', 'payment_refs' => 'REF-1'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(5, did(basename($this->actingAs($user)->post(route('join.save', eid(4)), [
+            'referrer' => 'Juma',
+            'beneficiaries' => [
+                ['name' => 'Kid One', 'relationship' => 'Child', 'allocation' => 60, 'bank' => '', 'contact' => '0711'],
+                ['name' => 'Spouse', 'relationship' => 'Spouse', 'allocation' => 40, 'bank' => '', 'contact' => '0722'],
+            ],
+        ])->assertRedirect()->headers->get('Location'))));
+        $this->actingAs($user)->get(route('join.step', eid(5)))->assertOk()->assertSee('Beneficiaries');
         // Tampered step keys are rejected.
         $this->actingAs($user)->get(route('join.step', 'NOTASTEP'))->assertNotFound();
+        // Allocations must total 100%.
+        $this->actingAs($user)->post(route('join.save', eid(4)), [
+            'beneficiaries' => [['name' => 'Kid One', 'allocation' => 30]],
+        ])->assertSessionHasErrors('beneficiaries');
         $this->actingAs($user)->post(route('join.submit'), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect(route('join.status'));
+        $this->actingAs($user)->get(route('join.status'))->assertOk()->assertSee('office');
 
         $app = MemberApplication::where('user_id', $user->id)->first();
         $this->assertEquals('pending', $app->status);
+        $this->assertTrue($app->contributions['entrance_fee']);
+        $this->assertCount(2, $app->beneficiaries);
+    }
+
+    public function test_step_uploads_are_stored(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $user = User::create(['name' => 'U', 'email' => 'u@test.local', 'password' => 'secret123', 'role' => 'applicant']);
+        $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
+
+        $this->actingAs($user)->post(route('join.save', eid(1)), [
+            'name' => 'U Person', 'phone' => '0711000011',
+            'nida_picture' => \Illuminate\Http\UploadedFile::fake()->image('nida.jpg'),
+        ])->assertRedirect();
+
+        $app = MemberApplication::where('user_id', $user->id)->first();
+        $this->assertNotEmpty($app->attachments['nida'] ?? null);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($app->attachments['nida']);
+    }
+
+    public function test_status_page_renders_for_every_state(): void
+    {
+        $admin = $this->makeAdmin();
+        $user = User::create(['name' => 'S', 'email' => 's@test.local', 'password' => 'secret123', 'role' => 'applicant']);
+        $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
+
+        // Draft state renders the landing + step pages.
+        $this->actingAs($user)->get(route('join.index'))->assertOk();
+        foreach ([1, 2, 3, 4] as $n) {
+            // Only reachable steps render; step 1 always works on a fresh draft.
+            if ($n === 1) {
+                $this->actingAs($user)->get(route('join.step', eid($n)))->assertOk();
+            }
+        }
+
+        // Rejected state renders with restart option.
+        $app = MemberApplication::create([
+            'user_id' => $user->id, 'current_step' => 4, 'name' => 'S',
+            'phone' => '0711000009', 'email' => 's@test.local', 'status' => 'rejected',
+        ]);
+        $this->actingAs($user)->get(route('join.status'))->assertOk()->assertSee('send again');
+        $this->actingAs($user)->post(route('join.restart'))->assertRedirect();
+        $this->assertEquals('draft', $app->fresh()->status);
+
+        // Approved state renders with portal link.
+        $app->update(['status' => 'pending']);
+        $this->actingAs($admin)->post(route('member-applications.approve', $app))->assertRedirect();
+        $this->actingAs($user->fresh())->get(route('join.status'))->assertOk()->assertSee('Open my portal');
+    }
+
+    public function test_staff_can_review_full_file_and_approval_carries_details(): void
+    {
+        $admin = $this->makeAdmin();
+        $app = MemberApplication::create([
+            'current_step' => 5, 'name' => 'Full File', 'phone' => '0711000020',
+            'email' => 'full@test.local', 'status' => 'pending',
+            'biography' => 'Trader from Mwanza', 'referrer' => 'Juma',
+            'bank_name' => 'CRDB', 'bank_account' => '0112233',
+            'beneficiaries' => [['name' => 'Kid', 'relationship' => 'Child', 'allocation' => 100]],
+            'contributions' => ['entrance_fee' => true],
+        ]);
+
+        $this->actingAs($admin)->get(route('member-applications.show', $app))
+            ->assertOk()->assertSee('Trader from Mwanza')->assertSee('0112233')->assertSee('Kid');
+
+        $this->actingAs($admin)->post(route('member-applications.approve', $app))->assertRedirect();
+
+        $member = Member::where('email', 'full@test.local')->first();
+        $this->assertNotNull($member);
+        $this->assertStringContainsString('Trader from Mwanza', $member->notes ?? '');
+    }
+
+    public function test_portal_create_pages_render(): void
+    {
+        $admin = $this->makeAdmin();
+        $member = Member::create([
+            'member_no' => 'M-R-1', 'name' => 'R', 'phone' => '0711000010',
+            'join_date' => now()->toDateString(), 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $user = User::create(['name' => 'R', 'email' => 'r@test.local', 'password' => 'secret123', 'role' => 'member', 'member_id' => $member->id]);
+        $user->roles()->sync(Role::where('slug', 'member')->pluck('id'));
+
+        $this->actingAs($user)->get(route('portal.deposits.create'))->assertOk();
+        $this->actingAs($user)->get(route('portal.investments.create'))->assertOk();
+        $this->actingAs($user)->get(route('portal.swf.create'))->assertOk();
+        $this->actingAs($user)->get(route('portal.home'))->assertOk();
+        $this->actingAs($user)->get(route('portal.statements'))->assertOk();
+        $this->actingAs($user)->get(route('portal.profile'))->assertOk();
     }
 
     public function test_applicant_is_kept_out_of_staff_areas(): void

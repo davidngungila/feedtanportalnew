@@ -8,17 +8,18 @@
 
     <div class="panel-grid">
         <div class="panel">
-            <div class="panel-head"><h3>How it works</h3><span class="link">4 steps</span></div>
+            <div class="panel-head"><h3>How it works</h3><span class="link">5 steps</span></div>
             <div class="panel-body">
-                <div class="toggle-row"><div class="toggle-text"><strong>Step 1 · Personal details</strong><span>Name, phone and national ID — verified against your ID. Your progress saves as you go, so you can come back anytime.</span></div></div>
-                <div class="toggle-row"><div class="toggle-text"><strong>Step 2 · Contact</strong><span>Email and address — used for approval notices, verification codes and statements.</span></div></div>
-                <div class="toggle-row"><div class="toggle-text"><strong>Step 3 · Membership</strong><span>Pick the member type that fits you and optionally a group you save or borrow with.</span></div></div>
-                <div class="toggle-row"><div class="toggle-text"><strong>Step 4 · Review &amp; submit</strong><span>Check everything once more, then send. Nothing is sent before you press submit.</span></div></div>
+                <div class="toggle-row"><div class="toggle-text"><strong>Step 1 · Personal details</strong><span>Name, sex, birth date, phone and NIDA ID — verified against your ID. Your progress saves as you go, so you can come back anytime.</span></div></div>
+                <div class="toggle-row"><div class="toggle-text"><strong>Step 2 · Contact &amp; work</strong><span>Email, address, job and statement channel — used for approval notices, verification codes and statements.</span></div></div>
+                <div class="toggle-row"><div class="toggle-text"><strong>Step 3 · Bank &amp; payments</strong><span>Bank details, contribution ticks, payment references and slip evidence.</span></div></div>
+                <div class="toggle-row"><div class="toggle-text"><strong>Step 4 · Membership &amp; people</strong><span>Type, referrer, bibliography, beneficiaries and savings goal.</span></div></div>
+                <div class="toggle-row"><div class="toggle-text"><strong>Step 5 · Review &amp; submit</strong><span>Check everything once more, then send. Nothing is sent before you press submit.</span></div></div>
                 <div class="toggle-row"><div class="toggle-text"><strong>Office review</strong><span>The office verifies your details, usually within a few days. Approved accounts unlock loans, savings, investments and SWF.</span></div></div>
             </div>
         </div>
         <div class="panel">
-            <div class="panel-head"><h3>Your registration</h3><span class="tag tag-gold">Step {{ $app->current_step }} of 4</span></div>
+            <div class="panel-head"><h3>Your registration</h3><span class="tag tag-gold">Step {{ $app->current_step }} of 5</span></div>
             <div class="panel-body">
                 <div class="detail-grid">
                     <div class="detail-item"><div class="dk">Name</div><div class="dv">{{ $app->name ?: '—' }}</div></div>
@@ -52,12 +53,5 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="card-grid">
-        <div class="mini-card"><div class="mc-top"><span class="mc-name">Loans</span></div><div class="mc-label">Apply and track repayments once approved.</div></div>
-        <div class="mini-card"><div class="mc-top"><span class="mc-name">Savings</span></div><div class="mc-label">Deposit, withdraw and watch your balance.</div></div>
-        <div class="mini-card"><div class="mc-top"><span class="mc-name">Investments</span></div><div class="mc-label">Place investments and follow maturity.</div></div>
-        <div class="mini-card"><div class="mc-top"><span class="mc-name">SWF</span></div><div class="mc-label">Contribute to the welfare fund and claim.</div></div>
     </div>
 @endsection

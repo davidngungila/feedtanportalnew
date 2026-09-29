@@ -6,15 +6,19 @@ use App\Models\MemberApplication;
 use App\Models\MemberGroup;
 use App\Models\MemberType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class JoinController extends Controller
 {
     public const STEPS = [
         1 => 'Personal details',
-        2 => 'Contact',
-        3 => 'Membership',
-        4 => 'Review & submit',
+        2 => 'Contact & work',
+        3 => 'Bank & payments',
+        4 => 'Membership & people',
+        5 => 'Review & submit',
     ];
+
+    public const MAX_STEP = 5;
 
     protected function ownApplication(): ?MemberApplication
     {
@@ -22,7 +26,7 @@ class JoinController extends Controller
 
         return MemberApplication::where('user_id', $user->id)
             ->orWhere(fn ($q) => $q->whereNull('user_id')->where('email', $user->email))
-            ->latest()->first();
+            ->latest('id')->first();
     }
 
     protected function draft(): MemberApplication
@@ -91,6 +95,15 @@ class JoinController extends Controller
         return view('join.step', ['app' => $app, 'step' => $n, 'steps' => self::STEPS, 'types' => $types, 'groups' => $groups]);
     }
 
+    protected function storeUpload(?object $file, string $folder): ?string
+    {
+        if (! $file) {
+            return null;
+        }
+
+        return $file->store($folder, 'public');
+    }
+
     public function saveStep(Request $request, string $n)
     {
         $n = $this->resolveStep($n);
@@ -100,23 +113,115 @@ class JoinController extends Controller
         $data = match ($n) {
             1 => $request->validate([
                 'name' => ['required', 'string', 'max:255'],
+                'sex' => ['nullable', 'in:male,female'],
+                'dob' => ['nullable', 'date', 'before:today'],
+                'marital_status' => ['nullable', 'in:single,married,divorced,widowed'],
                 'phone' => ['required', 'string', 'max:30'],
                 'national_id' => ['nullable', 'string', 'max:60'],
+                'nida_picture' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
             2 => $request->validate([
                 'email' => ['nullable', 'email'],
                 'address' => ['nullable', 'string', 'max:255'],
+                'job' => ['nullable', 'string', 'max:255'],
+                'employer' => ['nullable', 'string', 'max:255'],
+                'statement_channel' => ['nullable', 'in:sms,email,both'],
+                'passport_picture' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:4096'],
+            ]),
+            3 => $request->validate([
+                'bank_name' => ['nullable', 'string', 'max:255'],
+                'bank_account' => ['nullable', 'string', 'max:100'],
+                'pay_entrance' => ['nullable', 'in:1'],
+                'pay_capital' => ['nullable', 'in:1'],
+                'pay_phase2' => ['nullable', 'in:1'],
+                'pay_phase2_mode' => ['nullable', 'in:lumpsum,installment'],
+                'payment_refs' => ['nullable', 'string', 'max:1000'],
+                'payment_slips' => ['nullable', 'array'],
+                'payment_slips.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+                'standing_order' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+                'subscription_slip' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
             default => $request->validate([
                 'member_type_id' => ['nullable', 'exists:member_types,id'],
                 'member_group_id' => ['nullable', 'exists:member_groups,id'],
+                'biography' => ['nullable', 'string', 'max:2000'],
+                'referrer' => ['nullable', 'string', 'max:255'],
+                'consider_ordinary' => ['nullable', 'in:1'],
+                'group_name' => ['nullable', 'string', 'max:255'],
+                'group_registered' => ['nullable', 'in:1'],
+                'group_leaders' => ['nullable', 'string', 'max:500'],
+                'group_bank_account' => ['nullable', 'string', 'max:255'],
+                'group_contacts' => ['nullable', 'string', 'max:500'],
+                'savings_goal' => ['nullable', 'string', 'max:255'],
+                'goal_amount' => ['nullable', 'numeric', 'min:0'],
+                'goal_months' => ['nullable', 'integer', 'min:1', 'max:600'],
+                'goal_start' => ['nullable', 'date'],
+                'beneficiaries' => ['nullable', 'array', 'max:6'],
+                'beneficiaries.*.name' => ['required_with:beneficiaries', 'string', 'max:255'],
+                'beneficiaries.*.relationship' => ['nullable', 'string', 'max:100'],
+                'beneficiaries.*.allocation' => ['nullable', 'numeric', 'min:0', 'max:100'],
+                'beneficiaries.*.bank' => ['nullable', 'string', 'max:255'],
+                'beneficiaries.*.contact' => ['nullable', 'string', 'max:255'],
                 'notes' => ['nullable', 'string'],
+                'application_letter' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
         };
 
-        $app->update([...$data, 'current_step' => max($app->current_step, min($n + 1, 4))]);
+        $update = collect($data)->except([
+            'nida_picture', 'passport_picture', 'payment_slips', 'standing_order',
+            'subscription_slip', 'application_letter', 'pay_entrance', 'pay_capital',
+            'pay_phase2', 'pay_phase2_mode', 'payment_refs', 'beneficiaries',
+            'consider_ordinary', 'group_registered',
+        ])->all();
+        $update['consider_ordinary'] = $request->boolean('consider_ordinary');
+        $update['group_registered'] = $request->boolean('group_registered');
 
-        return redirect()->route('join.step', eid(min($n + 1, 4)))->with('status', 'Step '.$n.' saved.');
+        // Contributions checklist (form: entrance / capital / phase 2 + refs).
+        if ($n === 3) {
+            $update['contributions'] = [
+                'entrance_fee' => $request->boolean('pay_entrance'),
+                'capital_contribution' => $request->boolean('pay_capital'),
+                'phase2' => $request->boolean('pay_phase2'),
+                'phase2_mode' => $request->get('pay_phase2_mode'),
+                'payment_refs' => $request->get('payment_refs'),
+            ];
+        }
+
+        // Beneficiaries must allocate 100% when given.
+        if ($n === 4 && ! empty($data['beneficiaries'])) {
+            $rows = array_values(array_filter($data['beneficiaries'], fn ($b) => trim($b['name'] ?? '') !== ''));
+            $total = round(collect($rows)->sum(fn ($b) => (float) ($b['allocation'] ?? 0)), 2);
+            if ($total > 0 && abs($total - 100) > 0.01) {
+                return back()->withErrors(['beneficiaries' => 'Beneficiary allocations must add up to 100% (now '.$total.'%).'])->withInput();
+            }
+            $update['beneficiaries'] = $rows;
+        }
+
+        // Attachments merge with previously uploaded files.
+        $attachments = $app->attachments ?? [];
+        foreach (['nida_picture' => 'nida', 'passport_picture' => 'passport', 'standing_order' => 'standing_order', 'subscription_slip' => 'subscription_slip', 'application_letter' => 'application_letter'] as $field => $key) {
+            if ($request->hasFile($field)) {
+                if (! empty($attachments[$key]) && is_string($attachments[$key])) {
+                    Storage::disk('public')->delete($attachments[$key]);
+                }
+                $attachments[$key] = $this->storeUpload($request->file($field), 'applications');
+            }
+        }
+        if ($request->hasFile('payment_slips')) {
+            $slips = array_filter((array) ($attachments['slips'] ?? []), 'is_string');
+            foreach ((array) $request->file('payment_slips') as $slip) {
+                $slips[] = $this->storeUpload($slip, 'applications');
+            }
+            $attachments['slips'] = array_values($slips);
+        }
+        if ($attachments) {
+            $update['attachments'] = $attachments;
+        }
+
+        $update['current_step'] = max($app->current_step, min($n + 1, self::MAX_STEP));
+        $app->update($update);
+
+        return redirect()->route('join.step', eid(min($n + 1, self::MAX_STEP)))->with('status', 'Step '.$n.' saved.');
     }
 
     public function submit(Request $request)
@@ -129,7 +234,7 @@ class JoinController extends Controller
             'phone' => ['required', 'string', 'max:30'],
         ]);
 
-        $app->update([...$valid, 'status' => 'pending', 'current_step' => 4]);
+        $app->update([...$valid, 'status' => 'pending', 'current_step' => self::MAX_STEP]);
 
         return redirect()->route('join.status')->with('status', 'Application sent — we will notify you once reviewed.');
     }

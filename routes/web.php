@@ -93,7 +93,7 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
 
         Route::get('/member-applications', [MemberApplicationController::class, 'index'])->name('member-applications.index');
         Route::get('/member-applications/create', [MemberApplicationController::class, 'create'])->name('member-applications.create');
-        Route::post('/member-applications', [MemberApplicationController::class, 'store'])->name('member-applications.store');
+        Route::get('/member-applications/{memberApplication}', [MemberApplicationController::class, 'show'])->name('member-applications.show');        Route::post('/member-applications', [MemberApplicationController::class, 'store'])->name('member-applications.store');
         Route::put('/member-applications/{memberApplication}', [MemberApplicationController::class, 'update'])->name('member-applications.update');
         Route::post('/member-applications/{memberApplication}/approve', [MemberApplicationController::class, 'approve'])->name('member-applications.approve');
         Route::delete('/member-applications/{memberApplication}', [MemberApplicationController::class, 'destroy'])->name('member-applications.destroy');

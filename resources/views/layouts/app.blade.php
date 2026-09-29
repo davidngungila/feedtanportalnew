@@ -597,8 +597,8 @@
         $joinStep = 1;
         if ($isApplicantIncomplete) {
             try {
-                $joinApp = \App\Models\MemberApplication::where('user_id', $currentUser->id)->latest()->first()
-                    ?? ($currentUser->email ? \App\Models\MemberApplication::whereNull('user_id')->where('email', $currentUser->email)->latest()->first() : null);
+                $joinApp = \App\Models\MemberApplication::where('user_id', $currentUser->id)->latest('id')->first()
+                    ?? ($currentUser->email ? \App\Models\MemberApplication::whereNull('user_id')->where('email', $currentUser->email)->latest('id')->first() : null);
                 $joinStep = $joinApp?->current_step ?? 1;
             } catch (\Throwable $e) {
                 $joinApp = null;
@@ -662,15 +662,16 @@
                             $joinIcons = [
                                 1 => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
                                 2 => '<rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path>',
-                                3 => '<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>',
-                                4 => '<rect x="8" y="2" width="8" height="4" rx="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path>',
+                                3 => '<rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line>',
+                                4 => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>',
+                                5 => '<rect x="8" y="2" width="8" height="4" rx="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path>',
                             ];
                             $joinActiveStep = null;
                             if ($routeName === 'join.step') {
                                 try { $joinActiveStep = did((string) request()->route('n')); } catch (\Throwable $e) { $joinActiveStep = null; }
                             }
                         @endphp
-                        @foreach([1 => 'Personal details', 2 => 'Contact', 3 => 'Membership', 4 => 'Review & submit'] as $n => $label)
+                        @foreach([1 => 'Personal details', 2 => 'Contact & work', 3 => 'Bank & payments', 4 => 'Membership & people', 5 => 'Review & submit'] as $n => $label)
                         <a href="{{ $n <= $joinStep ? route('join.step', eid($n)) : '#' }}" class="sb-drop-sub {{ $joinActiveStep === $n ? 'active' : '' }}" @if($n > $joinStep) onclick="return false" style="opacity:.5;" @endif><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $joinIcons[$n] !!}</svg>{{ $n < $joinStep ? '✓ ' : '' }}{{ $label }}</a>
                         @endforeach
                         <a href="{{ route('join.status') }}" class="sb-drop-sub {{ $routeName === 'join.status' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Application status</a>
