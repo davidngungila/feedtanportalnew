@@ -8,10 +8,10 @@
 
     <div class="panel">
         <div class="panel-body" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
-            <div class="avatar {{ $user->hasRole('administrator') ? 'gold' : ($user->hasRole('chairperson', 'accountant') ? 'acacia' : '') }}" style="width:64px;height:64px;font-size:22px;">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
+            <div class="avatar {{ $user->hasRole('administrator') ? 'gold' : ($user->hasRole('chairperson', 'accountant') ? 'acacia' : '') }}" style="width:64px;height:64px;font-size:22px;overflow:hidden;">@if($user->avatarUrl())<img src="{{ $user->avatarUrl() }}" alt="{{ $user->name }}">@else{{ strtoupper(substr($user->name, 0, 1)) }}@endif</div>
             <div style="flex:1;min-width:220px;">
                 <h3 style="font-size:20px;">{{ $user->name }}</h3>
-                <p class="sub" style="margin:4px 0 8px;">{{ $user->email }}</p>
+                <p class="sub" style="margin:4px 0 8px;">{{ $user->email }}{{ $user->phone ? ' · '.$user->phone : '' }}</p>
                 <div><span class="tag tag-gold">{{ $user->primaryRoleLabel() }}</span></div>
                 <div style="margin-top:8px;">@foreach($user->roles as $r)<span class="tag tag-green" style="margin:0 4px 4px 0;">{{ $r->name }}</span>@endforeach</div>
             </div>
@@ -36,8 +36,16 @@
         <div class="panel">
             <div class="panel-head"><h3>Edit profile</h3></div>
             <div class="panel-body">
-                <form method="POST" action="{{ route('account.update') }}">@csrf @method('PUT')
+                <form method="POST" action="{{ route('account.update') }}" enctype="multipart/form-data">@csrf @method('PUT')
+                    <div class="field"><label>Profile photo</label>
+                        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+                            <div class="avatar {{ $user->hasRole('administrator') ? 'gold' : ($user->hasRole('chairperson', 'accountant') ? 'acacia' : '') }}" style="width:56px;height:56px;font-size:20px;overflow:hidden;">@if($user->avatarUrl())<img src="{{ $user->avatarUrl() }}" alt="">@else{{ strtoupper(substr($user->name, 0, 1)) }}@endif</div>
+                            <div style="flex:1;min-width:200px;"><input type="file" name="avatar" accept="image/*"><div class="sub" style="font-size:12px;color:var(--ink-soft);margin-top:4px;">JPG/PNG up to 2MB.</div></div>
+                        </div>
+                        @if($user->avatar_path)<label style="display:flex;gap:6px;align-items:center;font-size:13px;font-weight:600;margin-top:8px;"><input type="checkbox" name="remove_avatar" value="1"> Remove current photo</label>@endif
+                    </div>
                     <div class="form-row"><div class="field"><label>Name *</label><input name="name" value="{{ old('name', $user->name) }}" required></div><div class="field"><label>Email *</label><input type="email" name="email" value="{{ old('email', $user->email) }}" required></div></div>
+                    <div class="form-row"><div class="field"><label>Phone</label><input name="phone" value="{{ old('phone', $user->phone) }}" placeholder="e.g. 0712 345 678"></div><div class="field"><label>Linked member</label><input value="{{ $user->member->name ?? '—' }}" disabled></div></div>
                     <div class="receipt"><div class="receipt-row"><span>Header role</span><b>{{ $user->primaryRoleLabel() }}</b></div><div class="receipt-row"><span>Role changes</span><b>Managed by an administrator</b></div></div>
                     <div style="margin-top:14px;"><button class="btn btn-primary" type="submit">Save changes</button></div>
                 </form>

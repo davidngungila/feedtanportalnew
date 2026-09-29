@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
@@ -25,7 +26,24 @@ class AccountController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'avatar' => ['nullable', 'image', 'max:2048'],
+            'remove_avatar' => ['nullable', 'boolean'],
         ]);
+
+        if ($request->boolean('remove_avatar') && $user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $data['avatar_path'] = null;
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_path) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $data['avatar_path'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        unset($data['avatar'], $data['remove_avatar']);
 
         $user->update($data);
 

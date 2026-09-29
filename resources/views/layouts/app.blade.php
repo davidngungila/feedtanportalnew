@@ -873,7 +873,7 @@
                     </div>
                     <div class="tb-user-wrap">
                         <button type="button" class="tb-user" onclick="toggleUserMenu(this)" title="Account">
-                            <div class="tb-user-avatar {{ is_role('administrator') ? 'gold' : (is_role('chairperson', 'accountant') ? 'acacia' : '') }}">{{ $initials }}</div>
+                            <div class="tb-user-avatar {{ is_role('administrator') ? 'gold' : (is_role('chairperson', 'accountant') ? 'acacia' : '') }}">@if($currentUser && $currentUser->avatarUrl())<img src="{{ $currentUser->avatarUrl() }}" alt="">@else{{ $initials }}@endif</div>
                             <div class="tb-user-text">
                                 <b>{{ $currentUser->name ?? 'User' }}</b>
                                 <span>{{ $currentUser->primaryRoleLabel() }}</span>

@@ -12,7 +12,7 @@
                 <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th style="text-align:right;">Actions</th></tr></thead>
                 <tbody>
                     @forelse($users as $u)
-                    <tr><td><div class="cell-main"><div class="avatar">{{ strtoupper(substr($u->name,0,1)) }}</div><div class="cell-title">{{ $u->name }}</div></div></td>
+                    <tr><td><div class="cell-main"><div class="avatar" style="overflow:hidden;">@if($u->avatarUrl())<img src="{{ $u->avatarUrl() }}" alt="">@else{{ strtoupper(substr($u->name,0,1)) }}@endif</div><div class="cell-title">{{ $u->name }}</div></div></td>
                     <td>{{ $u->email }}</td>
                     <td>@foreach($u->roles as $r)<span class="tag {{ $r->slug === 'administrator' ? 'tag-gold' : 'tag-green' }}" style="margin-right:4px;">{{ $r->name }}</span>@endforeach</td>
                     <td><div class="row-actions">
