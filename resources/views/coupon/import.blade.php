@@ -60,7 +60,7 @@
                 @forelse($payouts as $p)
                 <tr>
                     <td><input type="checkbox" class="payout-check" value="{{ eid($p->id) }}" style="width:16px;height:16px;accent-color:var(--terracotta-600);"></td>
-                    <td><div class="cell-title">@if($p->member)<a href="{{ route('investments.member', $p->member) }}">{{ $p->member->name }}</a>@else — @endif</div><div class="cell-sub"><a href="{{ route('coupon.show', $p) }}">{{ $p->verify_code }}</a></div></td>
+                    <td><div class="cell-title"><a href="{{ route('coupon.show', $p) }}">{{ $p->member->name ?? '—' }}</a></div><div class="cell-sub"><a href="{{ route('coupon.show', $p) }}">{{ $p->verify_code }}</a></div></td>
                     <td><div class="cell-title">{{ $p->phone }}</div><div class="cell-sub">{{ $p->intlPhone() }}</div></td>
                     <td><div style="display:flex;gap:6px;align-items:center;"><input value="{{ $p->shortUrl() }}" readonly onclick="this.select()" style="width:220px;padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;font-size:12px;"><button type="button" class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ $p->shortUrl() }}');toast('Link copied.', 'success');">Copy</button></div></td>
                     <td class="cell-title">@money($p->net_cash)</td>
