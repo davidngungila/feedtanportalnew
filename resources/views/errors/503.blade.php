@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">503</div>
         <h1>Service unavailable</h1>
-        <p class="lede">Feedtan Portal is temporarily down for maintenance or is overloaded. Please wait a little while, then refresh the page.</p>
         @if(isset($exception) && method_exists($exception, 'getHeaders') && isset($exception->getHeaders()['Retry-After']))
             <div class="error-meta">Retry after <code>{{ $exception->getHeaders()['Retry-After'] }}s</code></div>
         @endif
@@ -21,7 +20,6 @@
             </button>
             <a href="{{ url('/') }}" class="btn btn-primary">Home</a>
         </div>
-        <div class="error-foot">Feedtan Portal · Maintenance mode or overloaded.</div>
     </div>
 </div>
 @endsection

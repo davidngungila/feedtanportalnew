@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">403</div>
         <h1>Access forbidden</h1>
-        <p class="lede">You are signed in, but your role does not have permission to open this page. If you believe this is a mistake, ask an administrator to update your role.</p>
         @if(config('app.debug') && isset($exception) && $exception->getMessage())
             <div class="error-meta"><code>{{ $exception->getMessage() }}</code></div>
         @endif
@@ -24,7 +23,6 @@
                 Dashboard
             </a>
         </div>
-        <div class="error-foot">Feedtan Portal · Roles &amp; permissions enforced.</div>
     </div>
 </div>
 @endsection

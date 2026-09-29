@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">400</div>
         <h1>Bad request</h1>
-        <p class="lede">The request could not be understood by the server. It may be malformed — please check the URL, try again, or return to a safe page.</p>
         @if(config('app.debug') && isset($exception) && $exception->getMessage())
             <div class="error-meta"><code>{{ $exception->getMessage() }}</code></div>
         @endif
@@ -24,7 +23,6 @@
                 Dashboard
             </a>
         </div>
-        <div class="error-foot">Feedtan Portal · If this keeps happening, contact your administrator.</div>
     </div>
 </div>
 @endsection

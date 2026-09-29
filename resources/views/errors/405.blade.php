@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">405</div>
         <h1>Method not allowed</h1>
-        <p class="lede">This address does not support the action you tried (for example, refreshing a form submission). Go back and try the action from the workspace instead.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -18,7 +17,6 @@
             </button>
             <a href="{{ url('/dashboard') }}" class="btn btn-primary">Dashboard</a>
         </div>
-        <div class="error-foot">Feedtan Portal · HTTP verb not supported here.</div>
     </div>
 </div>
 @endsection

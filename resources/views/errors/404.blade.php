@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">404</div>
         <h1>Page not found</h1>
-        <p class="lede">Sorry — the page you are looking for does not exist or was moved. Check the address, or use the workspace navigation to find members, loans, deposits or reports.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>

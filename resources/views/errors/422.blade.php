@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">422</div>
         <h1>Could not process</h1>
-        <p class="lede">The data you sent could not be processed. Something failed validation — go back, review the highlighted fields, and submit again.</p>
         @if(config('app.debug') && isset($exception) && $exception->getMessage())
             <div class="error-meta"><code>{{ $exception->getMessage() }}</code></div>
         @endif
@@ -21,7 +20,6 @@
             </button>
             <a href="{{ url('/dashboard') }}" class="btn btn-primary">Dashboard</a>
         </div>
-        <div class="error-foot">Feedtan Portal · Validation failed.</div>
     </div>
 </div>
 @endsection

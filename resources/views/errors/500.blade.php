@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">500</div>
         <h1>Something went wrong</h1>
-        <p class="lede">An unexpected error occurred on the server. Our team has been notified — please try again, and if it persists contact your administrator.</p>
         @if(config('app.debug') && isset($exception))
             <div class="error-meta"><code>{{ $exception->getMessage() ?: get_class($exception) }}</code><br>File <code>{{ $exception->getFile() }}:{{ $exception->getLine() }}</code></div>
         @endif
@@ -24,7 +23,6 @@
                 Dashboard
             </a>
         </div>
-        <div class="error-foot">Feedtan Portal · Internal server error.</div>
     </div>
 </div>
 @endsection

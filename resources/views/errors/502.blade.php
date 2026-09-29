@@ -10,7 +10,6 @@
         </div>
         <div class="error-code">502</div>
         <h1>Bad gateway</h1>
-        <p class="lede">The server received an invalid response from upstream. This is usually temporary — wait a few seconds and try again.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="window.location.reload()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
@@ -18,7 +17,6 @@
             </button>
             <a href="{{ url('/dashboard') }}" class="btn btn-primary">Dashboard</a>
         </div>
-        <div class="error-foot">Feedtan Portal · Upstream gateway error.</div>
     </div>
 </div>
 @endsection
