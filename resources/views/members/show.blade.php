@@ -38,9 +38,36 @@
         </div>
     </div>
 
+    @if(is_role('administrator', 'chairperson', 'secretary', 'accountant'))
+    @php $loginUser = \App\Models\User::where('member_id', $member->id)->first(); @endphp
+    <div class="panel" style="margin-bottom:24px;"><div class="panel-head"><h3>Member login access</h3>@if($loginUser)<span class="tag tag-green">Active</span>@else<span class="tag tag-grey">No login</span>@endif</div>
+        <div class="panel-body">
+            @if(session('provisioned_password'))
+                <div class="receipt" style="margin:0 0 14px;"><div class="receipt-row"><span>Temporary password (copy now — shown once)</span><b><code>{{ session('provisioned_password') }}</code></b></div></div>
+            @endif
+            @if($loginUser)
+                <div class="detail-grid">
+                    <div class="detail-item"><div class="dk">Login email</div><div class="dv">{{ $loginUser->email }}</div></div>
+                    <div class="detail-item"><div class="dk">Portal</div><div class="dv"><a href="{{ route('portal.home') }}" style="color:var(--terracotta-600);font-weight:700;">Member portal →</a></div></div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                    <form method="POST" action="{{ route('members.reset-login', $member) }}" onsubmit="return confirm('Generate a new password for this member?')">@csrf<button class="btn btn-soft btn-sm" type="submit">Reset password</button></form>
+                    <form method="POST" action="{{ route('members.destroy-login', $member) }}" onsubmit="return confirm('Remove this member login?')">@csrf @method('DELETE')<button class="btn btn-danger btn-sm" type="submit">Remove login</button></form>
+                </div>
+            @else
+                <form method="POST" action="{{ route('members.provision-login', $member) }}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">@csrf
+                    <div class="field" style="margin:0;min-width:220px;flex:1;"><label>Login email *</label><input type="email" name="email" required value="{{ old('email', $member->email) }}" placeholder="member@example.com"></div>
+                    <div class="field" style="margin:0;min-width:180px;"><label>Password (blank = auto)</label><input type="text" name="password" placeholder="Auto-generate"></div>
+                    <button class="btn btn-primary btn-sm" type="submit" style="padding:12px 20px;">Create login</button>
+                </form>
+                <p style="font-size:12.5px;color:var(--ink-soft);margin-top:10px;">Creates a <b>Member</b>-role user linked to this profile. Member signs in with the same login page and lands in the self-service portal.</p>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(this,'loans')">Loans <span class="tab-count">{{ $member->loans->count() }}</span></button>
-        <button class="tab-btn" onclick="switchTab(this,'deposits')">Deposits <span class="tab-count">{{ $member->deposits->count() }}</span></button>
+        <button class="tab-btn active" onclick="switchTab(this,'loans')">Loans <span class="tab-count">{{ $member->loans->count() }}</span></button>        <button class="tab-btn" onclick="switchTab(this,'deposits')">Deposits <span class="tab-count">{{ $member->deposits->count() }}</span></button>
         <button class="tab-btn" onclick="switchTab(this,'invest')">Investments <span class="tab-count">{{ $member->investments->count() }}</span></button>
         <button class="tab-btn" onclick="switchTab(this,'swf')">SWF <span class="tab-count">{{ $member->swfEntries->count() }}</span></button>
     </div>

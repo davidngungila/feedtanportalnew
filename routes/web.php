@@ -26,9 +26,11 @@ use App\Http\Controllers\MaturedPayoutController;
 use App\Http\Controllers\ReceivableController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\MemberApplicationController;
+use App\Http\Controllers\MemberAccessController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberDocumentController;
 use App\Http\Controllers\MemberGroupController;
+use App\Http\Controllers\MemberPortalController;
 use App\Http\Controllers\MemberTypeController;
 use App\Http\Controllers\PayoutVerifyController;
 use App\Http\Controllers\PermissionController;
@@ -39,9 +41,17 @@ use App\Http\Controllers\SwfController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => auth()->check()
-    ? redirect()->route('dashboard')
-    : redirect()->route('login'));
+Route::get('/', function () {
+    if (! auth()->check()) {
+        return redirect()->route('login');
+    }
+    $user = auth()->user();
+    if ($user->hasRole('member') && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
+        return redirect()->route('portal.home');
+    }
+
+    return redirect()->route('dashboard');
+});
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -318,6 +328,28 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/loans', [ReportController::class, 'loans'])->name('reports.loans');
         Route::get('/reports/savings', [ReportController::class, 'savings'])->name('reports.savings');
         Route::get('/reports/transactions', [ReportController::class, 'transactions'])->name('reports.transactions');
+
+        // Member login access (auto-provision + reset).
+        Route::post('/members/{member}/provision-login', [MemberAccessController::class, 'provision'])->name('members.provision-login');
+        Route::post('/members/{member}/reset-login', [MemberAccessController::class, 'resetPassword'])->name('members.reset-login');
+        Route::delete('/members/{member}/login', [MemberAccessController::class, 'destroy'])->name('members.destroy-login');
+    });
+
+    // Member self-service portal — own services only.
+    Route::middleware('role:member')->prefix('portal')->name('portal.')->group(function () {
+        Route::get('/', [MemberPortalController::class, 'home'])->name('home');
+        Route::get('/loans', [MemberPortalController::class, 'loans'])->name('loans');
+        Route::get('/loans/{loan}', [MemberPortalController::class, 'loanShow'])->name('loans.show');
+        Route::get('/deposits', [MemberPortalController::class, 'deposits'])->name('deposits');
+        Route::get('/investments', [MemberPortalController::class, 'investments'])->name('investments');
+        Route::get('/swf', [MemberPortalController::class, 'swf'])->name('swf');
+        Route::get('/statements', [MemberPortalController::class, 'statements'])->name('statements');
+        Route::get('/profile', [MemberPortalController::class, 'profile'])->name('profile');
+        Route::put('/profile', [MemberPortalController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/loan-applications', [MemberPortalController::class, 'loanApplications'])->name('loan-applications');
+        Route::get('/loan-applications/create', [MemberPortalController::class, 'createLoanApplication'])->name('loan-applications.create');
+        Route::post('/loan-applications', [MemberPortalController::class, 'storeLoanApplication'])->name('loan-applications.store');
+        Route::delete('/loan-applications/{loanApplication}', [MemberPortalController::class, 'cancelLoanApplication'])->name('loan-applications.cancel');
     });
 });
 

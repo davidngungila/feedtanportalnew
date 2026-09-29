@@ -11,6 +11,13 @@ class MemberController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
+        if ($user && method_exists($user, 'hasRole')
+            && $user->hasRole('member')
+            && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
+            return redirect()->route('portal.home');
+        }
+
         $q = trim((string) $request->get('q', ''));
         $status = $request->get('status', 'all');
         $typeId = $request->get('type_id', 'all');
@@ -74,6 +81,14 @@ class MemberController extends Controller
 
     public function show(Member $member)
     {
+        $user = auth()->user();
+        if ($user && method_exists($user, 'hasRole')
+            && $user->hasRole('member')
+            && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
+            $own = $user->member ?? ($user->email ? Member::where('email', $user->email)->first() : null);
+            abort_unless($own && $own->id === $member->id, 403, 'Members can only view their own profile. Use My Portal.');
+        }
+
         $member->load(['loans.repayments', 'deposits', 'investments', 'swfEntries', 'memberType', 'groups', 'documents']);
 
         return view('members.show', compact('member'));

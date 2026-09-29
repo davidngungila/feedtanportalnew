@@ -589,15 +589,17 @@
         $isUserArea = str_starts_with($routeName, 'users');
         $isRoleArea = str_starts_with($routeName, 'roles') || str_starts_with($routeName, 'permissions') || str_starts_with($routeName, 'activity') || str_starts_with($routeName, 'access');
         $isSettingArea = str_starts_with($routeName, 'settings');
+        $isPortalArea = str_starts_with($routeName, 'portal');
         $currentUser = auth()->user();
-        $recentLoans = \App\Models\Loan::query()->with('member')->latest()->limit(6)->get();
-        $recentMembers = \App\Models\Member::query()->latest()->limit(6)->get();
+        $isMemberOnly = $currentUser && method_exists($currentUser, 'hasRole') && $currentUser->hasRole('member') && ! $currentUser->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer');
+        $recentLoans = $isMemberOnly ? collect() : \App\Models\Loan::query()->with('member')->latest()->limit(6)->get();
+        $recentMembers = $isMemberOnly ? collect() : \App\Models\Member::query()->latest()->limit(6)->get();
         $initials = $currentUser ? strtoupper(implode('', array_map(fn ($w) => $w[0] ?? '', preg_split('/\s+/', $currentUser->name)))) : 'FP';
     @endphp
     <div id="app">
         <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
-        <aside class="sidebar" id="sidebar" data-sidebar-state-key="sidebar-state-{{ $currentUser->id }}">
+        <aside class="sidebar" id="sidebar" data-sidebar-state-key="sidebar-state-{{ $currentUser->id ?? 'guest' }}">
             <div class="sb-brand">
                 <div class="sb-mark">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
@@ -614,7 +616,28 @@
                     <span>Dashboard</span>
                 </a>
 
+                @if(is_role('member'))
+                <div class="sb-section-label">My Services</div>
+                <div class="sb-drop {{ $isPortalArea ? 'open' : '' }}" data-drop-key="portal">
+                    <button type="button" class="sb-drop-toggle" onclick="toggleSbDrop(this)" style="width:100%;padding:11px 12px;border-radius:10px;background:none;border:none;cursor:pointer;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;flex:none;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span>My Portal</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="sb-drop-menu">
+                        <a href="{{ route('portal.home') }}" class="sb-drop-sub {{ $routeName === 'portal.home' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>Overview</a>
+                        <a href="{{ route('portal.loans') }}" class="sb-drop-sub {{ str_starts_with($routeName, 'portal.loans') ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>My Loans</a>
+                        <a href="{{ route('portal.deposits') }}" class="sb-drop-sub {{ $routeName === 'portal.deposits' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>My Savings</a>
+                        <a href="{{ route('portal.investments') }}" class="sb-drop-sub {{ $routeName === 'portal.investments' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>My Investments</a>
+                        <a href="{{ route('portal.swf') }}" class="sb-drop-sub {{ $routeName === 'portal.swf' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>My SWF</a>
+                        <a href="{{ route('portal.statements') }}" class="sb-drop-sub {{ $routeName === 'portal.statements' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>Statements</a>
+                        <a href="{{ route('portal.loan-applications') }}" class="sb-drop-sub {{ str_starts_with($routeName, 'portal.loan-applications') ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>Loan Requests</a>
+                        <a href="{{ route('portal.profile') }}" class="sb-drop-sub {{ str_starts_with($routeName, 'portal.profile') ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>My Profile</a>
+                    </div>
+                </div>
+                @endif
 
+                @unless($isMemberOnly)
 
                 <div class="sb-drop {{ $isMemberArea ? 'open' : '' }}" data-drop-key="members">
                     <button type="button" class="sb-drop-toggle" onclick="toggleSbDrop(this)" style="width:100%;padding:11px 12px;border-radius:10px;background:none;border:none;cursor:pointer;">
@@ -639,6 +662,7 @@
                         @endif
                     </div>
                 </div>
+                @endunless
 
                 @if(is_role('administrator', 'chairperson', 'accountant', 'secretary', 'loan_officer'))
                 <div class="sb-drop {{ $isLoanArea ? 'open' : '' }}" data-drop-key="loans">
@@ -877,7 +901,7 @@
                             <div class="tb-user-avatar {{ is_role('administrator') ? 'gold' : (is_role('chairperson', 'accountant') ? 'acacia' : '') }}">@if($currentUser && $currentUser->avatarUrl())<img src="{{ $currentUser->avatarUrl() }}" alt="">@else{{ $initials }}@endif</div>
                             <div class="tb-user-text">
                                 <b>{{ $currentUser->name ?? 'User' }}</b>
-                                <span>{{ $currentUser->primaryRoleLabel() }}</span>
+                                <span>{{ $currentUser?->primaryRoleLabel() ?? 'Guest' }}</span>
                             </div>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tb-user-chev" style="width:14px;height:14px;color:var(--ink-soft);flex:none;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>

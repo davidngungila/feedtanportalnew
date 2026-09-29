@@ -17,6 +17,7 @@
             <p class="sub">{{ now()->format('l, j F Y') }} · Loans, deposits, investments and SWF at a glance.</p>
         </div>
         <div class="view-actions">
+            @if($ownMember)<a href="{{ route('portal.home') }}" class="btn btn-primary">Open my portal</a>@endif
             @if($canMembers)<a href="{{ route('members.create') }}" class="btn btn-primary">+ New member</a>@endif
         </div>
     </div>
@@ -29,7 +30,7 @@
             <div class="balance-box"><div class="bb-label">My investments</div><div class="bb-amount">@money($bal['invested'])</div></div>
             <div class="balance-box"><div class="bb-label">My SWF</div><div class="bb-amount">@money($bal['swf'])</div></div>
         </div>
-        <div class="panel"><div class="panel-head"><h3>My account</h3><a class="link" href="{{ route('members.show', $ownMember) }}">Open profile</a></div>
+        <div class="panel"><div class="panel-head"><h3>My account</h3><a class="link" href="{{ route('portal.profile') }}">Open profile</a></div>
         <div class="panel-body">Welcome, {{ $ownMember->name }} ({{ $ownMember->member_no }}). Your balances above are live.</div></div>
     @else
     <div class="stat-grid">

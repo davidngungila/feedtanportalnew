@@ -10,7 +10,7 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->route($this->landingRoute(Auth::user()));
         }
 
         return view('auth.login');
@@ -35,7 +35,7 @@ class AuthController extends Controller
             ]);
             log_activity('login');
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route($this->landingRoute(Auth::user())));
         }
 
         \App\Models\AccessLog::create([
@@ -63,5 +63,16 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    protected function landingRoute($user): string
+    {
+        if ($user && method_exists($user, 'hasRole')
+            && $user->hasRole('member')
+            && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
+            return 'portal.home';
+        }
+
+        return 'dashboard';
     }
 }
