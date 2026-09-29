@@ -206,6 +206,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/payouts/bulk', [MaturedPayoutController::class, 'bulkDestroy'])->name('payouts.bulk.destroy');
         Route::get('/coupon-payments', [CouponPaymentController::class, 'index'])->name('coupon.index');
         Route::get('/coupon-payments/template', [CouponPaymentController::class, 'template'])->name('coupon.template');
+        Route::get('/coupon-payments/export', [CouponPaymentController::class, 'export'])->name('coupon.export');
         Route::post('/coupon-payments', [CouponPaymentController::class, 'store'])->name('coupon.store');
         Route::post('/coupon-payments/sms-bulk', [CouponPaymentController::class, 'sendBulk'])->name('coupon.sms.bulk');
         Route::delete('/coupon-payments/bulk', [CouponPaymentController::class, 'bulkDestroy'])->name('coupon.bulk.destroy');

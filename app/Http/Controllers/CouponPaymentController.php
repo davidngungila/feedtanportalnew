@@ -38,6 +38,14 @@ class CouponPaymentController extends Controller
         }, 'coupon-payment-template.csv', ['Content-Type' => 'text/csv']);
     }
 
+    public function export()
+    {
+        return Excel::download(
+            new \App\Exports\CouponPaymentsExport,
+            'coupon-payments-'.now()->format('Ymd-His').'.xlsx'
+        );
+    }
+
     protected static function normKey(string $header): string
     {
         return preg_replace('/[^a-z0-9]+/', '', strtolower($header));

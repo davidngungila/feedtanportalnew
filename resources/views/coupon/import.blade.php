@@ -5,6 +5,7 @@
         <div><h2>Coupon Payment Verification</h2><p class="sub">Excel/CSV columns: Name, Amount Earned, Loan installment, SWF deduction, Fines deduction, T-shirt deduction, Capital FeedTan CMG, Net cash, Phone of their payment. Phone is required for SMS.</p></div>
         <div class="view-actions">
             <form method="POST" action="{{ route('coupon.sms.bulk') }}" onsubmit="return confirm('Send verification SMS to {{ $pendingSms }} member(s)?')" style="display:inline;">@csrf<button class="btn btn-primary" type="submit">Send bulk SMS ({{ $pendingSms }})</button></form>
+            <a href="{{ route('coupon.export') }}" class="btn btn-ghost">Export Excel</a>
             <a href="{{ route('coupon.template') }}" class="btn btn-ghost">Download template</a><a href="{{ route('investments.index') }}" class="btn btn-ghost">Back</a>
         </div>
     </div>
