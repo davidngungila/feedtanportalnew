@@ -71,7 +71,7 @@ class MemberOnboardingTest extends TestCase
         $this->actingAs($user)->post(route('join.save', eid(5)), [
             'beneficiaries' => [['name' => 'Kid One', 'allocation' => 30]],
         ])->assertSessionHasErrors('beneficiaries');
-        $this->actingAs($user)->post(route('join.submit'))->assertRedirect(route('join.status'));
+        $this->actingAs($user)->post(route('join.submit'), ['confirm' => '1'])->assertRedirect(route('join.status'));
         $this->actingAs($user)->get(route('join.status'))->assertOk()->assertSee('office');
 
         $app = MemberApplication::where('user_id', $user->id)->first();

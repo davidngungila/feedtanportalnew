@@ -193,62 +193,120 @@
         @endif
 
         @if($step === 7)
-        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1100px;">Check everything once more. You can jump back to any step to fix it — nothing is sent until you press submit.</p>
-        <h3 style="margin:0 0 12px;">Identity &amp; contact <a href="{{ route('join.step', eid(1)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
-        <div class="detail-grid-4" style="margin-bottom:20px;">
-            <div class="detail-item"><div class="dk">First name</div><div class="dv">{{ $app->first_name }}</div></div>
-            <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $app->middle_name ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $app->surname }}</div></div>
-            <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $app->sex ? ucfirst($app->sex) : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $app->dob?->format('d M Y') ?? '—' }}@if($app->age !== null) · {{ $app->age }} yrs @endif</div></div>
-            <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $app->marital_status ? ucfirst($app->marital_status) : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Phone</div><div class="dv">{{ $app->phone }}</div></div>
-            <div class="detail-item"><div class="dk">NIDA number</div><div class="dv">{{ $app->national_id ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Email</div><div class="dv">{{ $app->email ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Address</div><div class="dv">{{ $app->address ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Job</div><div class="dv">{{ $app->job ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Employer</div><div class="dv">{{ $app->employer ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
+        @php
+            $checkFields = [$app->first_name, $app->surname, $app->phone, $app->sex, $app->dob, $app->email, $app->address, $app->job, $app->bank_name, $app->bank_account, $app->member_type_id, $app->referrer];
+            $checkDone = collect($checkFields)->filter(fn ($v) => $v !== null && $v !== '')->count();
+            $checkTotal = count($checkFields) + 2;
+            if (! empty($app->beneficiaries)) { $checkDone++; }
+            if ($app->savings_goal || $app->goal_amount) { $checkDone++; }
+            $completeness = (int) round($checkDone / $checkTotal * 100);
+            $allocTotal = round(collect($app->beneficiaries ?? [])->sum(fn ($b) => (float) ($b['allocation'] ?? 0)), 2);
+            $monthly = ($app->goal_amount && $app->goal_months) ? ((float) $app->goal_amount / (int) $app->goal_months) : null;
+            $fileLabels = ['passport' => 'Passport picture', 'nida' => 'NIDA picture', 'standing_order' => 'Standing order', 'subscription_slip' => 'Subscription slip', 'application_letter' => 'Application letter'];
+        @endphp
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1100px;">This is exactly what the office will review. Open any section to fix it — nothing is sent until you declare and press submit.</p>
+
+        <div class="balance-strip">
+            <div class="balance-box"><div class="bb-label">Completeness</div><div class="bb-amount">{{ $completeness }}%</div><div class="bb-sub">{{ $checkDone }} of {{ $checkTotal }} items filled</div></div>
+            <div class="balance-box"><div class="bb-label">Beneficiaries</div><div class="bb-amount">{{ count($app->beneficiaries ?? []) }}</div><div class="bb-sub">Allocation total {{ $allocTotal }}%</div></div>
+            <div class="balance-box"><div class="bb-label">Monthly to save</div><div class="bb-amount">{{ $monthly ? money(round($monthly)) : '—' }}</div><div class="bb-sub">{{ $app->savings_goal ?: 'No goal set' }}</div></div>
+            <div class="balance-box"><div class="bb-label">Application</div><div class="bb-amount" style="font-size:18px;">#{{ $app->id }}</div><div class="bb-sub">Started {{ $app->created_at->format('d M Y') }}</div></div>
         </div>
-        <h3 style="margin:0 0 12px;">Bank &amp; payments <a href="{{ route('join.step', eid(3)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
-        <div class="detail-grid-4" style="margin-bottom:20px;">
-            <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $app->bank_name ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $app->bank_account ?? '—' }}</div></div>
+
+        <div class="table-card"><div class="table-toolbar"><span class="chip active">Section checklist</span></div>
+            <div class="table-scroll"><table style="min-width:520px;">
+                <thead><tr><th>Section</th><th>Status</th><th style="text-align:right;">Open</th></tr></thead>
+                <tbody>
+                    @foreach([1 => 'Personal details', 2 => 'Contact & work', 3 => 'Bank & payments', 4 => 'Membership', 5 => 'Beneficiaries', 6 => 'Savings goal'] as $n => $label)
+                    <tr>
+                        <td class="cell-title">{{ $n }} · {{ $label }}</td>
+                        <td>@if($n <= $app->current_step)<span class="tag tag-green">Done</span>@else<span class="tag tag-grey">Waiting</span>@endif</td>
+                        <td><div class="row-actions"><a href="{{ route('join.step', eid($n)) }}"><button type="button" title="Open">↗</button></a></div></td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table></div>
         </div>
-        <h3 style="margin:0 0 12px;">Membership <a href="{{ route('join.step', eid(4)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
-        <div class="detail-grid-4" style="margin-bottom:20px;">
-            <div class="detail-item"><div class="dk">Type applied</div><div class="dv">{{ $app->memberType->name ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
+
+        <div class="panel-grid">
+            <div class="panel"><div class="panel-head"><h3>Identity</h3><a class="link" href="{{ route('join.step', eid(1)) }}">Edit</a></div>
+                <div class="panel-body">
+                    @if(! empty($app->attachments['passport']))
+                    <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px;"><img src="{{ Storage::disk('public')->url($app->attachments['passport']) }}" alt="Passport" style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1.5px solid var(--line);"><div class="cell-sub">Profile photo on file ✓<br>Becomes your login picture on approval.</div></div>
+                    @endif
+                    <div class="detail-grid">
+                        <div class="detail-item"><div class="dk">First name</div><div class="dv">{{ $app->first_name }}</div></div>
+                        <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $app->middle_name ?? '—' }}</div></div>
+                        <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $app->surname }}</div></div>
+                        <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $app->sex ? ucfirst($app->sex) : '—' }}</div></div>
+                        <div class="detail-item"><div class="dk">Born (age)</div><div class="dv">{{ $app->dob?->format('d M Y') ?? '—' }}@if($app->age !== null) · {{ $app->age }} yrs @endif</div></div>
+                        <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $app->marital_status ? ucfirst($app->marital_status) : '—' }}</div></div>
+                        <div class="detail-item"><div class="dk">Phone</div><div class="dv">{{ $app->phone }}</div></div>
+                        <div class="detail-item"><div class="dk">NIDA number</div><div class="dv">{{ $app->national_id ?? '—' }}</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel"><div class="panel-head"><h3>Contact, work &amp; bank</h3><a class="link" href="{{ route('join.step', eid(2)) }}">Edit</a></div>
+                <div class="panel-body"><div class="detail-grid">
+                    <div class="detail-item"><div class="dk">Email</div><div class="dv">{{ $app->email ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Address</div><div class="dv">{{ $app->address ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Job</div><div class="dv">{{ $app->job ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Employer</div><div class="dv">{{ $app->employer ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $app->bank_name ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $app->bank_account ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Type applied</div><div class="dv">{{ $app->memberType->name ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
+                </div></div>
+            </div>
         </div>
-        @if(! empty($app->beneficiaries))
-        <h3 style="margin:0 0 12px;">Beneficiaries <a href="{{ route('join.step', eid(5)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
-        <div class="table-card"><div class="table-scroll"><table>
-            <thead><tr><th>Name</th><th>Relationship</th><th>%</th><th>Bank</th><th>Contact</th></tr></thead>
-            <tbody>
-                @foreach($app->beneficiaries as $b)
-                <tr><td class="cell-title">{{ $b['name'] ?? '—' }}</td><td>{{ $b['relationship'] ?? '—' }}</td><td>{{ $b['allocation'] ?? '—' }}</td><td>{{ $b['bank'] ?? '—' }}</td><td>{{ $b['contact'] ?? '—' }}</td></tr>
-                @endforeach
-            </tbody>
-        </table></div></div>
-        @endif
-        @if($app->savings_goal || $app->goal_amount)
-        <h3 style="margin:20px 0 12px;">Savings goal <a href="{{ route('join.step', eid(6)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
-        <div class="detail-grid-4" style="margin-bottom:20px;">
-            <div class="detail-item"><div class="dk">Goal</div><div class="dv">{{ $app->savings_goal ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Amount</div><div class="dv">{{ $app->goal_amount ? money($app->goal_amount) : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Duration</div><div class="dv">{{ $app->goal_months ? $app->goal_months.' months' : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Start</div><div class="dv">{{ $app->goal_start?->format('d M Y') ?? '—' }}</div></div>
+
+        <div class="table-card">
+            <div class="table-toolbar"><span class="chip active">Beneficiaries ({{ count($app->beneficiaries ?? []) }}) · total {{ $allocTotal }}%</span><a class="link" href="{{ route('join.step', eid(5)) }}">Edit</a></div>
+            <div class="table-scroll"><table>
+                <thead><tr><th>Name</th><th>Relationship</th><th>%</th><th>Bank</th><th>Contact</th></tr></thead>
+                <tbody>
+                    @forelse($app->beneficiaries ?? [] as $b)
+                    <tr><td class="cell-title">{{ $b['name'] ?? '—' }}</td><td>{{ $b['relationship'] ?? '—' }}</td><td>{{ $b['allocation'] ?? '—' }}</td><td>{{ $b['bank'] ?? '—' }}</td><td>{{ $b['contact'] ?? '—' }}</td></tr>
+                    @empty<tr><td colspan="5" class="empty-state">No beneficiaries named — <a href="{{ route('join.step', eid(5)) }}">add them</a>.</td></tr>@endforelse
+                </tbody>
+            </table></div>
         </div>
-        @endif
-        <form method="POST" action="{{ route('join.submit') }}" style="display:flex;gap:10px;margin-top:18px;">@csrf
-            <a href="{{ route('join.step', eid(6)) }}" class="btn btn-ghost">← Back</a>
-            <button class="btn btn-primary" type="submit">Submit application</button>
+
+        <div class="panel-grid">
+            <div class="panel"><div class="panel-head"><h3>Savings goal</h3><a class="link" href="{{ route('join.step', eid(6)) }}">Edit</a></div>
+                <div class="panel-body"><div class="detail-grid">
+                    <div class="detail-item"><div class="dk">Goal</div><div class="dv">{{ $app->savings_goal ?? '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Amount</div><div class="dv">{{ $app->goal_amount ? money($app->goal_amount) : '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Duration</div><div class="dv">{{ $app->goal_months ? $app->goal_months.' months' : '—' }}</div></div>
+                    <div class="detail-item"><div class="dk">Monthly needed</div><div class="dv">{{ $monthly ? money(round($monthly)) : '—' }}</div></div>
+                </div></div>
+            </div>
+            <div class="panel"><div class="panel-head"><h3>Attachments</h3></div>
+                <div class="panel-body">
+                    @php $shownFiles = 0; @endphp
+                    @foreach($fileLabels as $k => $label)
+                        @if(! empty($app->attachments[$k]))
+                        @php $shownFiles++; @endphp
+                        <div class="activity-row"><div class="activity-text"><b>{{ $label }}</b><div class="activity-time"><a href="{{ Storage::disk('public')->url($app->attachments[$k]) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">Open →</a></div></div></div>
+                        @endif
+                    @endforeach
+                    @if(! empty($app->attachments['slips']))
+                        @foreach($app->attachments['slips'] as $i => $slip)
+                        @php $shownFiles++; @endphp
+                        <div class="activity-row"><div class="activity-text"><b>Payment slip {{ $i + 1 }}</b><div class="activity-time"><a href="{{ Storage::disk('public')->url($slip) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">Open →</a></div></div></div>
+                        @endforeach
+                    @endif
+                    @if($shownFiles === 0)<div class="empty-state">No files attached yet.</div>@endif
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('join.submit') }}">@csrf
+            <div class="settings-panel">
+                <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:600;color:var(--coffee-800);cursor:pointer;"><input type="checkbox" name="confirm" value="1" style="width:18px;height:18px;margin-top:2px;accent-color:var(--terracotta-600);"> I declare that the details above are true and complete, and I ask FeedTan to review my membership.</label>
+                <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;"><a href="{{ route('join.step', eid(6)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Declare &amp; submit application</button></div>
+            </div>
         </form>
-        <div class="card-grid" style="margin-top:22px;">
-            <div class="mini-card"><div class="mc-top"><span class="mc-name">After submit</span></div><div class="mc-label">Your application moves to office review. Track it any time under Application status.</div></div>
-            <div class="mini-card"><div class="mc-top"><span class="mc-name">On approval</span></div><div class="mc-label">You get a member number and the services menu opens: loans, savings, investments, SWF.</div></div>
-            <div class="mini-card"><div class="mc-top"><span class="mc-name">If rejected</span></div><div class="mc-label">Your answers are kept — update them and send again from the status page.</div></div>
-        </div>
         @endif
     </div>
 @endsection

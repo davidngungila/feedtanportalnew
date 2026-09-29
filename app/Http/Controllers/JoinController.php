@@ -260,6 +260,7 @@ class JoinController extends Controller
     {
         $app = $this->draft();
         abort_unless($app->status === 'draft', 403);
+        $request->validate(['confirm' => ['accepted']]);
 
         if (! $app->first_name || ! $app->surname || ! $app->phone) {
             return redirect()->route('join.step', eid(1))->withErrors(['name' => 'Please complete your name and phone in step 1 first.']);
