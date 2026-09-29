@@ -173,7 +173,6 @@
             <div class="amount-col"><div class="lbl">Makato</div><div class="deduct">− TZS {{ number_format($deductTotal, 0) }}</div></div>
             <div class="amount-col"><div class="lbl">Kiasi halisi (baada ya makato)</div><div class="val">TZS {{ number_format($payout->net_cash, 0) }}</div></div>
         </div>
-        <div class="sub">{{ $payout->member->name ?? '—' }}</div>
     </div>
 
     @php
