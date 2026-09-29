@@ -177,17 +177,7 @@
             color:var(--err-fg,var(--terracotta-600));
         }
         .error-content h1{font-size:26px;margin:10px 0 10px;}
-        .error-meta{
-            margin:22px auto 0;max-width:480px;
-            background:var(--sand-100);border:1px dashed var(--coffee-300);
-            border-radius:var(--radius-sm);padding:13px 15px;
-            font-size:12.5px;color:var(--coffee-800);text-align:left;line-height:1.6;
-            word-break:break-word;
-        }
-        .error-meta code{
-            background:var(--white);border:1px solid var(--line);border-radius:5px;
-            padding:1px 6px;font-size:11.5px;color:var(--coffee-700);
-        }
+        .error-content .lede{color:var(--ink-soft);font-size:14.5px;line-height:1.65;max-width:460px;margin:0 auto;}
         .error-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px;}
         .btn{
             display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -202,6 +192,10 @@
         .btn-ghost:hover{background:var(--sand-100);}
         .btn-soft{background:var(--sand-100);color:var(--coffee-800);}
         .btn-soft:hover{background:var(--sand-200);}
+        .error-links{margin-top:20px;font-size:12.5px;color:var(--ink-soft);}
+        .error-links a{color:var(--terracotta-600);font-weight:700;}
+        .error-links a:hover{text-decoration:underline;}
+        .error-foot{margin-top:22px;padding-top:16px;border-top:1px dashed var(--line);font-size:11.5px;color:var(--coffee-300);}
 
         .mobile-overlay{position:fixed;inset:0;background:rgba(36,20,8,.45);z-index:190;display:none;}
         .mobile-overlay.show{display:block;}
@@ -288,7 +282,7 @@
                     <span>Reports</span>
                 </a>
             </nav>
-            <div class="sb-foot">Feedtan Portal</div>
+            <div class="sb-foot">Feedtan Portal · Error page<br>Your workspace shell stays visible while the content explains the problem.</div>
         </aside>
 
         <div class="main" id="mainArea">

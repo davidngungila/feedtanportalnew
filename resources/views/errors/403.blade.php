@@ -10,9 +10,7 @@
         </div>
         <div class="error-code">403</div>
         <h1>Access forbidden</h1>
-        @if(config('app.debug') && isset($exception) && $exception->getMessage())
-            <div class="error-meta"><code>{{ $exception->getMessage() }}</code></div>
-        @endif
+        <p class="lede">You are signed in, but your role does not have permission to open this page. If you believe this is a mistake, ask an administrator to update your role.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -23,6 +21,7 @@
                 Dashboard
             </a>
         </div>
+        <div class="error-foot">Feedtan Portal · Roles &amp; permissions enforced.</div>
     </div>
 </div>
 @endsection

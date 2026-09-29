@@ -10,9 +10,7 @@
         </div>
         <div class="error-code">500</div>
         <h1>Something went wrong</h1>
-        @if(config('app.debug') && isset($exception))
-            <div class="error-meta"><code>{{ $exception->getMessage() ?: get_class($exception) }}</code><br>File <code>{{ $exception->getFile() }}:{{ $exception->getLine() }}</code></div>
-        @endif
+        <p class="lede">An unexpected error occurred on the server. Our team has been notified — please try again, and if it persists contact your administrator.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="window.location.reload()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
@@ -23,6 +21,7 @@
                 Dashboard
             </a>
         </div>
+        <div class="error-foot">Feedtan Portal · Internal server error.</div>
     </div>
 </div>
 @endsection

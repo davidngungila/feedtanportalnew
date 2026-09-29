@@ -10,6 +10,7 @@
         </div>
         <div class="error-code">401</div>
         <h1>Sign in required</h1>
+        <p class="lede">You need to be signed in to view this page. Your session may have expired — please sign in again to continue working in Feedtan Portal.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -20,6 +21,7 @@
                 Sign in
             </a>
         </div>
+        <div class="error-foot">Feedtan Portal · Protected workspace page.</div>
     </div>
 </div>
 @endsection

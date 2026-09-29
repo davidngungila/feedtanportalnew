@@ -10,10 +10,12 @@
         </div>
         <div class="error-code">{{ $exception->getStatusCode() }}</div>
         <h1>Server issue</h1>
+        <p class="lede">{{ $exception->getMessage() ?: 'An unexpected server error occurred. Please try again shortly.' }}</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="window.location.reload()">Try again</button>
             <a href="{{ url('/dashboard') }}" class="btn btn-primary">Dashboard</a>
         </div>
+        <div class="error-foot">Feedtan Portal · Server error.</div>
     </div>
 </div>
 @endsection

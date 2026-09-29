@@ -10,10 +10,12 @@
         </div>
         <div class="error-code">{{ $exception->getStatusCode() }}</div>
         <h1>Something needs attention</h1>
+        <p class="lede">{{ $exception->getMessage() ?: 'The request could not be completed. Please go back and try again, or return to the dashboard.' }}</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">Go back</button>
             <a href="{{ url('/dashboard') }}" class="btn btn-primary">Dashboard</a>
         </div>
+        <div class="error-foot">Feedtan Portal · Client error.</div>
     </div>
 </div>
 @endsection

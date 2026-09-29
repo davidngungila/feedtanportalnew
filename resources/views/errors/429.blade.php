@@ -10,6 +10,7 @@
         </div>
         <div class="error-code">429</div>
         <h1>Slow down</h1>
+        <p class="lede">You sent too many requests in a short time, so further requests were paused to protect the system. Wait a moment, then try again.</p>
         <div class="error-actions">
             <button type="button" class="btn btn-ghost" onclick="goBack()">Go back</button>
             <button type="button" class="btn btn-primary" onclick="setTimeout(()=>window.location.reload(),800);this.disabled=true;this.textContent='Retrying…'">
@@ -17,6 +18,7 @@
                 Try again
             </button>
         </div>
+        <div class="error-foot">Feedtan Portal · Rate limit reached. Please wait a minute.</div>
     </div>
 </div>
 @endsection
