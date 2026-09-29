@@ -16,6 +16,10 @@ class DashboardController extends Controller
     public function __invoke()
     {
         $user = auth()->user();
+
+        if (function_exists('is_applicant_incomplete') && is_applicant_incomplete($user)) {
+            return redirect()->route('join.index');
+        }
         $roles = $user && method_exists($user, 'roleSlugs') ? $user->roleSlugs() : [$user->role ?? ''];
 
         $isAdmin = in_array('administrator', $roles, true) || in_array('admin', $roles, true);

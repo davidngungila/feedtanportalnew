@@ -19,6 +19,7 @@ use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestmentProductController;
 use App\Http\Controllers\InvestmentReturnController;
 use App\Http\Controllers\JournalController;
+use App\Http\Controllers\JoinController;
 use App\Http\Controllers\LoanApplicationController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LoanProductController;
@@ -45,22 +46,30 @@ Route::get('/', function () {
     if (! auth()->check()) {
         return redirect()->route('login');
     }
-    $user = auth()->user();
-    if ($user->hasRole('member') && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
-        return redirect()->route('portal.home');
-    }
 
-    return redirect()->route('dashboard');
+    return redirect()->route(home_route_for(auth()->user()));
 });
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Member onboarding: stepped registration for new accounts.
+    Route::prefix('join')->name('join.')->group(function () {
+        Route::get('/', [JoinController::class, 'index'])->name('index');
+        Route::get('/step/{n}', [JoinController::class, 'step'])->name('step')->where('n', '[1-4]');
+        Route::post('/step/{n}', [JoinController::class, 'saveStep'])->name('save')->where('n', '[1-4]');
+        Route::post('/submit', [JoinController::class, 'submit'])->name('submit');
+        Route::post('/restart', [JoinController::class, 'restart'])->name('restart');
+        Route::get('/status', [JoinController::class, 'status'])->name('status');
+    });
 
     Route::get('/account', [AccountController::class, 'index'])->name('account.index');
     Route::put('/account', [AccountController::class, 'update'])->name('account.update');
@@ -301,6 +310,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/finance/reconciliation/{reconciliation}', [FinanceReconciliationController::class, 'destroy'])->name('finance.reconciliation.destroy');
 
         Route::get('/finance/statements', [FinanceStatementController::class, 'hub'])->name('finance.statements');
+        Route::get('/finance/trial-balance', [FinanceStatementController::class, 'trialBalance'])->name('finance.trial-balance');
         Route::get('/finance/income-statement', [FinanceStatementController::class, 'income'])->name('finance.income-statement');
         Route::get('/finance/balance-sheet', [FinanceStatementController::class, 'balance'])->name('finance.balance-sheet');
         Route::get('/finance/cashflow-statement', [FinanceStatementController::class, 'cashflowStatement'])->name('finance.cashflow-statement');
@@ -340,9 +350,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [MemberPortalController::class, 'home'])->name('home');
         Route::get('/loans', [MemberPortalController::class, 'loans'])->name('loans');
         Route::get('/loans/{loan}', [MemberPortalController::class, 'loanShow'])->name('loans.show');
+        Route::post('/loans/{loan}/repay', [MemberPortalController::class, 'repayLoan'])->name('loans.repay');
         Route::get('/deposits', [MemberPortalController::class, 'deposits'])->name('deposits');
+        Route::get('/deposits/create', [MemberPortalController::class, 'createDeposit'])->name('deposits.create');
+        Route::post('/deposits', [MemberPortalController::class, 'storeDeposit'])->name('deposits.store');
         Route::get('/investments', [MemberPortalController::class, 'investments'])->name('investments');
+        Route::get('/investments/create', [MemberPortalController::class, 'createInvestment'])->name('investments.create');
+        Route::post('/investments', [MemberPortalController::class, 'storeInvestment'])->name('investments.store');
         Route::get('/swf', [MemberPortalController::class, 'swf'])->name('swf');
+        Route::get('/swf/create', [MemberPortalController::class, 'createSwf'])->name('swf.create');
+        Route::post('/swf', [MemberPortalController::class, 'storeSwf'])->name('swf.store');
         Route::get('/statements', [MemberPortalController::class, 'statements'])->name('statements');
         Route::get('/profile', [MemberPortalController::class, 'profile'])->name('profile');
         Route::put('/profile', [MemberPortalController::class, 'updateProfile'])->name('profile.update');

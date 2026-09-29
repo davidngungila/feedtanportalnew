@@ -65,4 +65,6 @@
         <td><form method="POST" action="{{ route('investment-returns.destroy', $r) }}" onsubmit="return confirm('Remove return?')">@csrf @method('DELETE')<div class="row-actions"><button type="submit" class="danger">✕</button></div></form></td></tr>
         @empty<tr><td colspan="4" class="empty-state">No returns paid yet.</td></tr>@endforelse</tbody></table></div>
     </div>
+
+    @include('finance.postings', ['journals' => $journals])
 @endsection

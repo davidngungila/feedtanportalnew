@@ -242,6 +242,7 @@ class CouponPaymentController extends Controller
             'repayments' => LoanRepayment::with('loan')->where('notes', 'like', "%{$code}%")->get(),
             'swf' => SwfEntry::where('reason', 'like', "%{$code}%")->get(),
             'finance' => \App\Models\FinanceTransaction::with('account')->where('description', 'like', "%{$code}%")->get(),
+            'settlement' => \App\Models\JournalEntry::with('lines.account')->where('source_type', \App\Models\InvestmentPayout::class)->where('source_id', $payout->id)->where('source_tag', 'settlement')->first(),
             'sms' => \App\Models\SmsLog::where('investment_payout_id', $payout->id)->latest()->get(),
         ];
 
@@ -257,78 +258,61 @@ class CouponPaymentController extends Controller
 
         DB::transaction(function () use ($payout) {
             $member = $payout->member;
+            $parts = [
+                'gross' => (float) $payout->amount,
+                'loan' => 0,
+                'swf' => 0,
+                'fee' => (float) $payout->fines_deduction,
+                'other' => (float) $payout->tshirt_deduction + (float) $payout->capital_cmg,
+                'shares' => 0,
+                'savings' => 0,
+                'reinvest' => 0,
+                'cash' => (float) $payout->net_cash,
+            ];
 
-            if ($payout->loan_installment > 0) {
-                $this->applyLoan($member, (float) $payout->loan_installment, 'Coupon payout deduction '.$payout->verify_code);
-            }
-
-            if ($payout->swf_deduction > 0) {
-                SwfEntry::create([
-                    'member_id' => $member->id,
-                    'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                    'type' => 'contribution',
-                    'amount' => $payout->swf_deduction,
-                    'method' => 'bank',
-                    'transacted_at' => now()->toDateString(),
-                    'reason' => 'Coupon payout deduction '.$payout->verify_code,
-                    'received_by' => auth()->id(),
-                ]);
-            }
-
-            $cash = FinanceAccount::where('code', '1000')->first();
-            foreach ([[$payout->fines_deduction, 'fee', 'Coupon fines deduction '.$payout->verify_code], [$payout->tshirt_deduction, 'other', 'Coupon T-shirt deduction '.$payout->verify_code], [$payout->capital_cmg, 'other', 'Coupon Capital FeedTan CMG '.$payout->verify_code]] as [$amt, $cat, $desc]) {
-                if ($amt > 0 && $cash) {
-                    $tx = \App\Models\FinanceTransaction::create([
-                        'reference' => FinancePosting::reference('FT'),
-                        'type' => 'income',
-                        'category' => $cat,
-                        'finance_account_id' => $cash->id,
-                        'member_id' => $member->id,
-                        'amount' => $amt,
-                        'transacted_at' => now()->toDateString(),
-                        'description' => $desc,
-                        'created_by' => auth()->id(),
-                    ]);
-                    FinancePosting::postTransaction($tx->fresh());
+            // Operational records post nothing here — one compound journal settles all legs.
+            FinancePosting::withoutPosting(function () use ($payout, $member, &$parts) {
+                if ($payout->loan_installment > 0) {
+                    $parts['loan'] += $this->applyLoan($member, (float) $payout->loan_installment, 'Coupon payout deduction '.$payout->verify_code);
                 }
-            }
 
-            if ((float) $payout->net_cash > 0 && $cash) {
-                $via = $payout->allocation['cash_method'] ?? null;
-                $acct = $payout->allocation['cash_account'] ?? null;
-                $tx = \App\Models\FinanceTransaction::create([
-                    'reference' => FinancePosting::reference('FT'),
-                    'type' => 'expense',
-                    'category' => 'operating',
-                    'finance_account_id' => $cash->id,
-                    'member_id' => $member->id,
-                    'amount' => (float) $payout->net_cash,
-                    'transacted_at' => now()->toDateString(),
-                    'description' => 'Coupon payout cash '.$payout->verify_code.($via ? ' via '.$via.($acct ? ' '.$acct : '') : ''),
-                    'created_by' => auth()->id(),
-                ]);
-                FinancePosting::postTransaction($tx->fresh());
-            }
+                if ($payout->swf_deduction > 0) {
+                    SwfEntry::create([
+                        'member_id' => $member->id,
+                        'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                        'type' => 'contribution',
+                        'amount' => $payout->swf_deduction,
+                        'method' => 'bank',
+                        'transacted_at' => now()->toDateString(),
+                        'reason' => 'Coupon payout deduction '.$payout->verify_code,
+                        'received_by' => auth()->id(),
+                    ]);
+                    $parts['swf'] += (float) $payout->swf_deduction;
+                }
+            });
+
+            FinancePosting::postPayoutSettlement($payout, $parts, $payout->allocation['cash_method'] ?? null);
 
             $payout->update(['status' => 'paid', 'paid_at' => now()]);
         });
 
-        return back()->with('status', 'Coupon '.$payout->verify_code.' paid and deductions applied.');
+        return back()->with('status', 'Coupon '.$payout->verify_code.' paid and posted to the ledger.');
     }
 
-    protected function applyLoan(Member $member, float $amount, string $notes): void
+    protected function applyLoan(Member $member, float $amount, string $notes): float
     {
         if ($amount <= 0) {
-            return;
+            return 0;
         }
         $loan = $member->loans()->whereIn('status', ['active', 'overdue'])->orderBy('due_date')->first();
         if (! $loan || $loan->outstanding() <= 0) {
-            return;
+            return 0;
         }
+        $applied = min($amount, $loan->outstanding());
         LoanRepayment::create([
             'loan_id' => $loan->id,
             'receipt_no' => 'LR-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'amount' => min($amount, $loan->outstanding()),
+            'amount' => $applied,
             'paid_at' => now()->toDateString(),
             'method' => 'bank',
             'notes' => $notes,
@@ -337,6 +321,8 @@ class CouponPaymentController extends Controller
         if ($loan->fresh()->outstanding() <= 0) {
             $loan->update(['status' => 'paid']);
         }
+
+        return $applied;
     }
 
     protected function sendOne(InvestmentPayout $payout, ?string $template = null): bool

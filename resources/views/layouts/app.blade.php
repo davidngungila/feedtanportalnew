@@ -592,6 +592,18 @@
         $isPortalArea = str_starts_with($routeName, 'portal');
         $currentUser = auth()->user();
         $isMemberOnly = $currentUser && method_exists($currentUser, 'hasRole') && $currentUser->hasRole('member') && ! $currentUser->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer');
+        $isApplicantIncomplete = $currentUser && function_exists('is_applicant_incomplete') && is_applicant_incomplete($currentUser);
+        $joinApp = null;
+        $joinStep = 1;
+        if ($isApplicantIncomplete) {
+            try {
+                $joinApp = \App\Models\MemberApplication::where('user_id', $currentUser->id)->latest()->first()
+                    ?? ($currentUser->email ? \App\Models\MemberApplication::whereNull('user_id')->where('email', $currentUser->email)->latest()->first() : null);
+                $joinStep = $joinApp?->current_step ?? 1;
+            } catch (\Throwable $e) {
+                $joinApp = null;
+            }
+        }
         $recentLoans = $isMemberOnly ? collect() : \App\Models\Loan::query()->with('member')->latest()->limit(6)->get();
         $recentMembers = $isMemberOnly ? collect() : \App\Models\Member::query()->latest()->limit(6)->get();
         $initials = $currentUser ? strtoupper(implode('', array_map(fn ($w) => $w[0] ?? '', preg_split('/\s+/', $currentUser->name)))) : 'FP';
@@ -637,7 +649,24 @@
                 </div>
                 @endif
 
-                @unless($isMemberOnly)
+                @if($isApplicantIncomplete)
+                <div class="sb-section-label">Registration @if($joinApp && $joinApp->status === 'pending')(review)@endif</div>
+                <div class="sb-drop open" data-drop-key="join">
+                    <button type="button" class="sb-drop-toggle" onclick="toggleSbDrop(this)" style="width:100%;padding:11px 12px;border-radius:10px;background:none;border:none;cursor:pointer;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;flex:none;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                        <span>Join steps</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="sb-drop-menu">
+                        @foreach([1 => 'Personal details', 2 => 'Contact', 3 => 'Membership', 4 => 'Review & submit'] as $n => $label)
+                        <a href="{{ $n <= $joinStep ? route('join.step', $n) : '#' }}" class="sb-drop-sub {{ request()->routeIs('join.step') && (int) request()->route('n') === $n ? 'active' : '' }}" @if($n > $joinStep) onclick="return false" style="opacity:.5;" @endif><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if($n < $joinStep)<polyline points="20 6 9 17 4 12"></polyline>@else<circle cx="12" cy="12" r="10"></circle>@endif</svg>{{ $n < $joinStep ? '✓ ' : '' }}{{ $label }}</a>
+                        @endforeach
+                        <a href="{{ route('join.status') }}" class="sb-drop-sub {{ $routeName === 'join.status' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Application status</a>
+                    </div>
+                </div>
+                @endif
+
+                @unless($isMemberOnly || $isApplicantIncomplete)
 
                 <div class="sb-drop {{ $isMemberArea ? 'open' : '' }}" data-drop-key="members">
                     <button type="button" class="sb-drop-toggle" onclick="toggleSbDrop(this)" style="width:100%;padding:11px 12px;border-radius:10px;background:none;border:none;cursor:pointer;">
@@ -779,6 +808,7 @@
                         <a href="{{ route('finance.income-statement') }}" class="sb-drop-sub {{ $routeName === 'finance.income-statement' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>Income Statement</a>
                         <a href="{{ route('finance.balance-sheet') }}" class="sb-drop-sub {{ $routeName === 'finance.balance-sheet' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>Balance Sheet</a>
                         <a href="{{ route('finance.cashflow-statement') }}" class="sb-drop-sub {{ $routeName === 'finance.cashflow-statement' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>Cash Flow Statement</a>
+                        <a href="{{ route('finance.trial-balance') }}" class="sb-drop-sub {{ $routeName === 'finance.trial-balance' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Trial Balance</a>
                         <a href="{{ route('finance.reports') }}" class="sb-drop-sub {{ $routeName === 'finance.reports' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 11.65 8.36 3.3a1 1 0 0 0-1.86 0l-3.9 8.35L.56 11.05a1 1 0 0 0-.59 1.83l7.35 6.36a1 1 0 0 0 1.66-.39l7.35-9.39a1 1 0 0 0-.89-1.58z"></path></svg>Financial Reports</a>
                     </div>
                 </div>

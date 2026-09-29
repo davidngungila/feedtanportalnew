@@ -7,7 +7,8 @@
             <p class="sub">{{ $member->member_no }} · {{ $member->memberType->name ?? 'Member' }} · Joined {{ $member->join_date?->format('d M Y') }}</p>
         </div>
         <div class="view-actions">
-            <a href="{{ route('portal.statements') }}" class="btn btn-ghost">Statements</a>
+            <a href="{{ route('portal.deposits.create') }}" class="btn btn-ghost">Deposit</a>
+            <a href="{{ route('portal.investments.create') }}" class="btn btn-ghost">Invest</a>
             <a href="{{ route('portal.loan-applications.create') }}" class="btn btn-primary">Request loan</a>
         </div>
     </div>

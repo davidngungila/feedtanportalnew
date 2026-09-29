@@ -64,25 +64,29 @@ class LoanApplicationController extends Controller
         $rate = (float) ($loanApplication->product->interest_rate ?? 10);
         $interest = round($loanApplication->amount * $rate / 100, 2);
 
-        $loan = Loan::create([
-            'member_id' => $loanApplication->member_id,
-            'loan_product_id' => $loanApplication->loan_product_id,
-            'loan_no' => 'LN-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'principal' => $loanApplication->amount,
-            'interest_rate' => $rate,
-            'interest_amount' => $interest,
-            'total_payable' => $loanApplication->amount + $interest,
-            'disbursed_at' => now()->toDateString(),
-            'due_date' => now()->addMonths((int) ($loanApplication->product->duration_months ?? 12))->toDateString(),
-            'status' => 'active',
-            'purpose' => $loanApplication->purpose,
-            'notes' => 'From application #'.$loanApplication->id,
-            'created_by' => auth()->id(),
-        ]);
+        $loan = \Illuminate\Support\Facades\DB::transaction(function () use ($loanApplication, $rate, $interest) {
+            $loan = Loan::create([
+                'member_id' => $loanApplication->member_id,
+                'loan_product_id' => $loanApplication->loan_product_id,
+                'loan_no' => 'LN-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'principal' => $loanApplication->amount,
+                'interest_rate' => $rate,
+                'interest_amount' => $interest,
+                'total_payable' => $loanApplication->amount + $interest,
+                'disbursed_at' => now()->toDateString(),
+                'due_date' => now()->addMonths((int) ($loanApplication->product->duration_months ?? 12))->toDateString(),
+                'status' => 'active',
+                'purpose' => $loanApplication->purpose,
+                'notes' => 'From application #'.$loanApplication->id,
+                'created_by' => auth()->id(),
+            ]);
 
-        $loanApplication->update(['status' => 'disbursed', 'reviewed_by' => auth()->id()]);
+            $loanApplication->update(['status' => 'disbursed', 'reviewed_by' => auth()->id()]);
 
-        return redirect()->route('loans.show', $loan)->with('status', 'Loan disbursed.');
+            return $loan;
+        });
+
+        return redirect()->route('loans.show', $loan)->with('status', 'Loan disbursed and posted to the ledger.');
     }
 
     public function destroy(LoanApplication $loanApplication)

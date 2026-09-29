@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
             'investment_officer' => 'Investment Officer',
             'loan_officer' => 'Loan Officer',
             'member' => 'Member',
+            'applicant' => 'Applicant',
         ];
 
         foreach ($roles as $slug => $name) {

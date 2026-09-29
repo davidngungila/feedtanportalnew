@@ -54,23 +54,30 @@ class LoanController extends Controller
 
         $interest = round($data['principal'] * $data['interest_rate'] / 100, 2);
 
-        $loan = Loan::create([
-            ...$data,
-            'loan_no' => 'LN-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'interest_amount' => $interest,
-            'total_payable' => $data['principal'] + $interest,
-            'disbursed_at' => $data['disbursed_at'] ?? now()->toDateString(),
-            'created_by' => auth()->id(),
-        ]);
+        $loan = \Illuminate\Support\Facades\DB::transaction(function () use ($data, $interest) {
+            return Loan::create([
+                ...$data,
+                'loan_no' => 'LN-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'interest_amount' => $interest,
+                'total_payable' => $data['principal'] + $interest,
+                'disbursed_at' => $data['disbursed_at'] ?? now()->toDateString(),
+                'created_by' => auth()->id(),
+            ]);
+        });
 
-        return redirect()->route('loans.show', $loan)->with('status', 'Loan recorded.');
+        return redirect()->route('loans.show', $loan)->with('status', 'Loan recorded and posted to the ledger.');
     }
 
     public function show(Loan $loan)
     {
         $loan->load(['member', 'repayments', 'product']);
+        $repaymentIds = $loan->repayments->pluck('id');
+        $journals = \App\Models\JournalEntry::where(function ($q) use ($loan, $repaymentIds) {
+            $q->where(fn ($w) => $w->where('source_type', \App\Models\Loan::class)->where('source_id', $loan->id))
+                ->orWhere(fn ($w) => $w->where('source_type', \App\Models\LoanRepayment::class)->whereIn('source_id', $repaymentIds));
+        })->latest('entry_date')->get();
 
-        return view('loans.show', compact('loan'));
+        return view('loans.show', compact('loan', 'journals'));
     }
 
     public function edit(Loan $loan)
@@ -87,7 +94,9 @@ class LoanController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $loan->update($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($loan, $data) {
+            $loan->update($data);
+        });
 
         return redirect()->route('loans.show', $loan)->with('status', 'Loan updated.');
     }
@@ -101,20 +110,22 @@ class LoanController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        LoanRepayment::create([
-            ...$data,
-            'loan_id' => $loan->id,
-            'receipt_no' => 'LR-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'received_by' => auth()->id(),
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($loan, $data) {
+            LoanRepayment::create([
+                ...$data,
+                'loan_id' => $loan->id,
+                'receipt_no' => 'LR-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
 
-        if ($loan->fresh()->outstanding() <= 0) {
-            $loan->update(['status' => 'paid']);
-        } elseif ($loan->status === 'pending') {
-            $loan->update(['status' => 'active']);
-        }
+            if ($loan->fresh()->outstanding() <= 0) {
+                $loan->update(['status' => 'paid']);
+            } elseif ($loan->status === 'pending') {
+                $loan->update(['status' => 'active']);
+            }
+        });
 
-        return redirect()->route('loans.show', $loan)->with('status', 'Repayment recorded.');
+        return redirect()->route('loans.show', $loan)->with('status', 'Repayment recorded and posted to the ledger.');
     }
 
     public function destroyRepayment(LoanRepayment $repayment)
@@ -122,13 +133,13 @@ class LoanController extends Controller
         $loanId = $repayment->loan_id;
         $repayment->delete();
 
-        return redirect()->route('loans.show', $loanId)->with('status', 'Repayment removed.');
+        return redirect()->route('loans.show', $loanId)->with('status', 'Repayment removed (journal reversed).');
     }
 
     public function destroy(Loan $loan)
     {
         $loan->delete();
 
-        return redirect()->route('loans.index')->with('status', 'Loan removed.');
+        return redirect()->route('loans.index')->with('status', 'Loan removed (journals reversed).');
     }
 }

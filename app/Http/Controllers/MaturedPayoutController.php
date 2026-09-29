@@ -251,6 +251,7 @@ class MaturedPayoutController extends Controller
             'swf' => SwfEntry::where('reason', 'like', "%{$code}%")->get(),
             'finance' => \App\Models\FinanceTransaction::with('account')->where('description', 'like', "%{$code}%")->get(),
             'returns' => InvestmentReturn::where('notes', 'like', "%{$code}%")->get(),
+            'settlement' => \App\Models\JournalEntry::with('lines.account')->where('source_type', \App\Models\InvestmentPayout::class)->where('source_id', $payout->id)->where('source_tag', 'settlement')->first(),
             'sms' => \App\Models\SmsLog::where('investment_payout_id', $payout->id)->latest()->get(),
         ];
 
@@ -265,51 +266,50 @@ class MaturedPayoutController extends Controller
 
         DB::transaction(function () use ($payout) {
             $member = $payout->member;
+            $parts = [
+                'gross' => (float) $payout->amount,
+                'loan' => 0,
+                'swf' => 0,
+                'fee' => (float) $payout->fines_deduction,
+                'other' => (float) $payout->tshirt_deduction + (float) $payout->capital_cmg,
+                'shares' => 0,
+                'savings' => 0,
+                'reinvest' => 0,
+                'cash' => 0,
+            ];
 
-            if ($payout->loan_installment > 0) {
-                $this->applyLoan($member, (float) $payout->loan_installment, 'Matured payout deduction '.$payout->verify_code);
-            }
-
-            if ($payout->swf_deduction > 0) {
-                SwfEntry::create([
-                    'member_id' => $member->id,
-                    'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                    'type' => 'contribution',
-                    'amount' => $payout->swf_deduction,
-                    'method' => 'bank',
-                    'transacted_at' => now()->toDateString(),
-                    'reason' => 'Matured payout deduction '.$payout->verify_code,
-                    'received_by' => auth()->id(),
-                ]);
-            }
-
-            $cash = FinanceAccount::where('code', '1000')->first();
-            foreach ([[$payout->fines_deduction, 'fee', 'Fines deduction '.$payout->verify_code], [$payout->tshirt_deduction, 'other', 'T-shirt deduction '.$payout->verify_code], [$payout->capital_cmg, 'other', 'Capital FeedTan CMG '.$payout->verify_code]] as [$amt, $cat, $desc]) {
-                if ($amt > 0 && $cash) {
-                    $tx = \App\Models\FinanceTransaction::create([
-                        'reference' => FinancePosting::reference('FT'),
-                        'type' => 'income',
-                        'category' => $cat,
-                        'finance_account_id' => $cash->id,
-                        'member_id' => $member->id,
-                        'amount' => $amt,
-                        'transacted_at' => now()->toDateString(),
-                        'description' => $desc,
-                        'created_by' => auth()->id(),
-                    ]);
-                    FinancePosting::postTransaction($tx->fresh());
+            // Operational records post nothing here — one compound journal settles all legs.
+            FinancePosting::withoutPosting(function () use ($payout, $member, &$parts) {
+                if ($payout->loan_installment > 0) {
+                    $parts['loan'] += $this->applyLoan($member, (float) $payout->loan_installment, 'Matured payout deduction '.$payout->verify_code);
                 }
-            }
 
-            // Member-chosen allocation of the remaining net cash.
-            foreach ($this->resolveAllocation($payout) as $kind => $item) {
-                $this->applyAllocation($payout, $member, $kind, $item);
-            }
+                if ($payout->swf_deduction > 0) {
+                    SwfEntry::create([
+                        'member_id' => $member->id,
+                        'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                        'type' => 'contribution',
+                        'amount' => $payout->swf_deduction,
+                        'method' => 'bank',
+                        'transacted_at' => now()->toDateString(),
+                        'reason' => 'Matured payout deduction '.$payout->verify_code,
+                        'received_by' => auth()->id(),
+                    ]);
+                    $parts['swf'] += (float) $payout->swf_deduction;
+                }
+
+                // Member-chosen allocation of the remaining net cash.
+                foreach ($this->resolveAllocation($payout) as $kind => $item) {
+                    $this->applyAllocation($payout, $member, $kind, $item, $parts);
+                }
+            });
+
+            FinancePosting::postPayoutSettlement($payout, $parts, $payout->allocation['cash_method'] ?? null);
 
             $payout->update(['status' => 'paid', 'paid_at' => now()]);
         });
 
-        return back()->with('status', 'Payout '.$payout->verify_code.' paid and deductions applied.');
+        return back()->with('status', 'Payout '.$payout->verify_code.' paid and posted to the ledger.');
     }
 
     protected function resolveAllocation(InvestmentPayout $payout): array
@@ -328,19 +328,20 @@ class MaturedPayoutController extends Controller
         };
     }
 
-    protected function applyLoan(Member $member, float $amount, string $notes): void
+    protected function applyLoan(Member $member, float $amount, string $notes): float
     {
         if ($amount <= 0) {
-            return;
+            return 0;
         }
         $loan = $member->loans()->whereIn('status', ['active', 'overdue'])->orderBy('due_date')->first();
         if (! $loan || $loan->outstanding() <= 0) {
-            return;
+            return 0;
         }
+        $applied = min($amount, $loan->outstanding());
         LoanRepayment::create([
             'loan_id' => $loan->id,
             'receipt_no' => 'LR-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'amount' => min($amount, $loan->outstanding()),
+            'amount' => $applied,
             'paid_at' => now()->toDateString(),
             'method' => 'bank',
             'notes' => $notes,
@@ -349,12 +350,12 @@ class MaturedPayoutController extends Controller
         if ($loan->fresh()->outstanding() <= 0) {
             $loan->update(['status' => 'paid']);
         }
+
+        return $applied;
     }
 
-    protected function applyAllocation(InvestmentPayout $payout, Member $member, string $kind, mixed $item): void
+    protected function applyAllocation(InvestmentPayout $payout, Member $member, string $kind, mixed $item, array &$parts): void
     {
-        $cash = FinanceAccount::where('code', '1000')->first();
-
         switch ($kind) {
             case 'cash':
                 if ((float) $item > 0 && $payout->investment_id) {
@@ -367,6 +368,7 @@ class MaturedPayoutController extends Controller
                         'notes' => 'Matured payout cash '.$payout->verify_code.($via ? ' via '.$via.($acct ? ' '.$acct : '') : ''),
                         'paid_by' => auth()->id(),
                     ]);
+                    $parts['cash'] += (float) $item;
                 }
                 break;
             case 'swf':
@@ -381,26 +383,14 @@ class MaturedPayoutController extends Controller
                         'reason' => 'Member allocation '.$payout->verify_code,
                         'received_by' => auth()->id(),
                     ]);
+                    $parts['swf'] += (float) $item;
                 }
                 break;
             case 'loan':
-                $this->applyLoan($member, (float) $item, 'Member allocation (rejesho) '.$payout->verify_code);
+                $parts['loan'] += $this->applyLoan($member, (float) $item, 'Member allocation (rejesho) '.$payout->verify_code);
                 break;
             case 'shares':
-                if ((float) $item > 0 && $cash) {
-                    $tx = \App\Models\FinanceTransaction::create([
-                        'reference' => FinancePosting::reference('FT'),
-                        'type' => 'income',
-                        'category' => 'other',
-                        'finance_account_id' => $cash->id,
-                        'member_id' => $member->id,
-                        'amount' => (float) $item,
-                        'transacted_at' => now()->toDateString(),
-                        'description' => 'Hisa za duka '.$payout->verify_code,
-                        'created_by' => auth()->id(),
-                    ]);
-                    FinancePosting::postTransaction($tx->fresh());
-                }
+                $parts['shares'] += (float) $item;
                 break;
             case 'reinvest':
                 if ((float) $item > 0) {
@@ -420,6 +410,8 @@ class MaturedPayoutController extends Controller
                         'notes' => 'From matured payout '.$payout->verify_code,
                         'created_by' => auth()->id(),
                     ]);
+                    // Stays inside the investments liability — no settlement legs.
+                    $parts['reinvest'] += (float) $item;
                 }
                 break;
             case 'savings':
@@ -434,6 +426,7 @@ class MaturedPayoutController extends Controller
                         'notes' => 'Akiba '.strtoupper($payout->allocation['savings_type'] ?? '').' from payout '.$payout->verify_code,
                         'received_by' => auth()->id(),
                     ]);
+                    $parts['savings'] += (float) $item;
                 }
                 break;
         }

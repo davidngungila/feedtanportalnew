@@ -13,7 +13,7 @@ class MemberApplicationController extends Controller
     public function index(Request $request)
     {
         $status = $request->get('status', 'all');
-        $query = MemberApplication::query()->with(['memberType', 'memberGroup'])->latest();
+        $query = MemberApplication::query()->with(['memberType', 'memberGroup'])->where('status', '!=', 'draft')->latest();
 
         if (in_array($status, ['pending', 'approved', 'rejected'], true)) {
             $query->where('status', $status);
@@ -64,27 +64,44 @@ class MemberApplicationController extends Controller
 
     public function approve(MemberApplication $memberApplication)
     {
-        $member = Member::create([
-            'member_no' => 'M-'.now()->format('Ymd').'-'.str_pad((string) (Member::max('id') + 1), 4, '0', STR_PAD_LEFT),
-            'member_type_id' => $memberApplication->member_type_id,
-            'name' => $memberApplication->name,
-            'phone' => $memberApplication->phone,
-            'email' => $memberApplication->email,
-            'national_id' => $memberApplication->national_id,
-            'address' => $memberApplication->address,
-            'join_date' => now()->toDateString(),
-            'status' => 'active',
-            'notes' => $memberApplication->notes,
-            'created_by' => auth()->id(),
-        ]);
+        $member = \Illuminate\Support\Facades\DB::transaction(function () use ($memberApplication) {
+            $member = Member::create([
+                'member_no' => 'M-'.now()->format('Ymd').'-'.str_pad((string) (Member::max('id') + 1), 4, '0', STR_PAD_LEFT),
+                'member_type_id' => $memberApplication->member_type_id,
+                'name' => $memberApplication->name,
+                'phone' => $memberApplication->phone,
+                'email' => $memberApplication->email,
+                'national_id' => $memberApplication->national_id,
+                'address' => $memberApplication->address,
+                'join_date' => now()->toDateString(),
+                'status' => 'active',
+                'notes' => $memberApplication->notes,
+                'created_by' => auth()->id(),
+            ]);
 
-        if ($memberApplication->member_group_id) {
-            $member->groups()->sync([$memberApplication->member_group_id]);
-        }
+            if ($memberApplication->member_group_id) {
+                $member->groups()->sync([$memberApplication->member_group_id]);
+            }
 
-        $memberApplication->update(['status' => 'approved', 'reviewed_by' => auth()->id()]);
+            // Link the applicant's login (if they signed up) and unlock services.
+            $loginUser = $memberApplication->user_id
+                ? \App\Models\User::find($memberApplication->user_id)
+                : ($memberApplication->email ? \App\Models\User::where('email', $memberApplication->email)->first() : null);
 
-        return redirect()->route('members.show', $member)->with('status', 'Application approved — member created.');
+            if ($loginUser) {
+                $loginUser->update(['member_id' => $member->id]);
+                $slugs = array_values(array_unique([...array_diff($loginUser->roleSlugs(), ['applicant']), 'member']));
+                $loginUser->roles()->sync(\App\Models\Role::whereIn('slug', $slugs)->pluck('id'));
+                $staff = array_values(array_intersect($slugs, ['administrator', 'admin', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer']));
+                $loginUser->update(['role' => $staff[0] ?? 'member']);
+            }
+
+            $memberApplication->update(['status' => 'approved', 'reviewed_by' => auth()->id()]);
+
+            return $member;
+        });
+
+        return redirect()->route('members.show', $member)->with('status', 'Application approved — member created and login unlocked.');
     }
 
     public function destroy(MemberApplication $memberApplication)

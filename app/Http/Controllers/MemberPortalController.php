@@ -7,8 +7,7 @@ use App\Models\Investment;
 use App\Models\Loan;
 use App\Models\LoanApplication;
 use App\Models\LoanProduct;
-use App\Models\Member;
-use Illuminate\Http\Request;
+use App\Models\Member;use Illuminate\Http\Request;
 
 class MemberPortalController extends Controller
 {
@@ -273,5 +272,153 @@ class MemberPortalController extends Controller
         $loanApplication->delete();
 
         return redirect()->route('portal.loan-applications')->with('status', 'Request cancelled.');
+    }
+
+    public function repayLoan(Request $request, Loan $loan)
+    {
+        $member = $this->currentMember();
+        abort_unless($loan->member_id === $member->id, 403);
+
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:100', 'max:'.$loan->outstanding()],
+            'paid_at' => ['required', 'date', 'before_or_equal:today'],
+            'method' => ['required', 'in:cash,mobile,bank'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($loan, $data) {
+            \App\Models\LoanRepayment::create([
+                ...$data,
+                'loan_id' => $loan->id,
+                'receipt_no' => 'LR-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
+
+            if ($loan->fresh()->outstanding() <= 0) {
+                $loan->update(['status' => 'paid']);
+            }
+        });
+
+        return redirect()->route('portal.loans.show', $loan)->with('status', 'Payment recorded.');
+    }
+
+    public function createDeposit()
+    {
+        $member = $this->currentMember();
+        $products = \App\Models\DepositProduct::where('status', 'active')->orderBy('name')->get();
+
+        return view('portal.deposit-create', compact('member', 'products'));
+    }
+
+    public function storeDeposit(Request $request)
+    {
+        $member = $this->currentMember();
+
+        $data = $request->validate([
+            'type' => ['required', 'in:deposit,withdrawal'],
+            'deposit_product_id' => ['nullable', 'exists:deposit_products,id'],
+            'amount' => ['required', 'numeric', 'min:100'],
+            'method' => ['required', 'in:cash,mobile,bank'],
+            'transacted_at' => ['required', 'date', 'before_or_equal:today'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        if ($data['type'] === 'withdrawal' && $data['amount'] > $member->savingsBalance()) {
+            return back()->withErrors(['amount' => 'Amount exceeds your savings balance ('.money($member->savingsBalance()).').'])->withInput();
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($member, $data) {
+            \App\Models\Deposit::create([
+                ...$data,
+                'member_id' => $member->id,
+                'receipt_no' => 'DP-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
+        });
+
+        return redirect()->route('portal.deposits')->with('status', $data['type'] === 'deposit' ? 'Deposit recorded.' : 'Withdrawal recorded.');
+    }
+
+    public function createInvestment()
+    {
+        $member = $this->currentMember();
+        $products = \App\Models\InvestmentProduct::where('status', 'active')->orderBy('name')->get();
+
+        return view('portal.investment-create', compact('member', 'products'));
+    }
+
+    public function storeInvestment(Request $request)
+    {
+        $member = $this->currentMember();
+
+        $data = $request->validate([
+            'investment_product_id' => ['required', 'exists:investment_products,id'],
+            'amount' => ['required', 'numeric', 'min:1000'],
+            'start_date' => ['required', 'date', 'before_or_equal:today'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $product = \App\Models\InvestmentProduct::findOrFail($data['investment_product_id']);
+        abort_unless($product->status === 'active', 403, 'This product is not available.');
+        if ($product->min_amount && $data['amount'] < $product->min_amount) {
+            return back()->withErrors(['amount' => 'Minimum for '.$product->name.' is '.money($product->min_amount).'.'])->withInput();
+        }
+
+        $rate = (float) ($product->return_rate ?? 0);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($member, $data, $product, $rate) {
+            \App\Models\Investment::create([
+                'member_id' => $member->id,
+                'investment_product_id' => $product->id,
+                'investment_no' => 'INV-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'amount' => $data['amount'],
+                'expected_return_rate' => $rate,
+                'expected_return' => round($data['amount'] * $rate / 100, 2),
+                'start_date' => $data['start_date'],
+                'maturity_date' => $product->duration_months
+                    ? \Carbon\Carbon::parse($data['start_date'])->addMonths((int) $product->duration_months)->toDateString()
+                    : null,
+                'status' => 'active',
+                'plan' => $product->name,
+                'notes' => $data['notes'] ?? null,
+                'created_by' => auth()->id(),
+            ]);
+        });
+
+        return redirect()->route('portal.investments')->with('status', 'Investment placed.');
+    }
+
+    public function createSwf()
+    {
+        $member = $this->currentMember();
+
+        return view('portal.swf-create', compact('member'));
+    }
+
+    public function storeSwf(Request $request)
+    {
+        $member = $this->currentMember();
+
+        $data = $request->validate([
+            'type' => ['required', 'in:contribution,deduction,payout,claim'],
+            'amount' => ['required', 'numeric', 'min:100'],
+            'method' => ['required', 'in:cash,mobile,bank'],
+            'transacted_at' => ['required', 'date', 'before_or_equal:today'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($data['type'] !== 'contribution' && $data['amount'] > $member->swfBalance()) {
+            return back()->withErrors(['amount' => 'Amount exceeds your SWF balance ('.money($member->swfBalance()).').'])->withInput();
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($member, $data) {
+            \App\Models\SwfEntry::create([
+                ...$data,
+                'member_id' => $member->id,
+                'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
+        });
+
+        return redirect()->route('portal.swf')->with('status', 'SWF entry recorded.');
     }
 }

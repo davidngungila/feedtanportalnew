@@ -52,4 +52,6 @@
             </div>
         </div>
     </div>
+
+    @include('finance.postings', ['journals' => $journals])
 @endsection

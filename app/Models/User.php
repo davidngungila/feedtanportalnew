@@ -100,6 +100,7 @@ class User extends Authenticatable
         'investment_officer',
         'loan_officer',
         'member',
+        'applicant',
     ];
 
     public function primaryRole(): ?string

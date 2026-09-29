@@ -3,7 +3,7 @@
 @section('content')
     <div class="view-head">
         <div><h2>My investments</h2><p class="sub">{{ $member->name }} · Track placements, maturity and payouts.</p></div>
-        <div class="view-actions"><a href="{{ route('portal.home') }}" class="btn btn-ghost">Portal</a></div>
+        <div class="view-actions"><a href="{{ route('portal.home') }}" class="btn btn-ghost">Portal</a><a href="{{ route('portal.investments.create') }}" class="btn btn-primary">+ New investment</a></div>
     </div>
     <div class="table-card">
         <div class="table-toolbar"><span class="chip active">Placements ({{ $investments->total() }})</span></div>

@@ -124,16 +124,18 @@ class SwfController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $entry = SwfEntry::create([
-            ...$data,
-            'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'received_by' => auth()->id(),
-        ]);
+        $entry = \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            return SwfEntry::create([
+                ...$data,
+                'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
+        });
 
         return match ($data['type']) {
-            'contribution' => redirect()->route('swf.contributions')->with('status', 'Contribution recorded.'),
-            'deduction' => redirect()->route('swf.deductions')->with('status', 'Deduction recorded.'),
-            default => redirect()->route('swf.claims')->with('status', 'Claim recorded.'),
+            'contribution' => redirect()->route('swf.contributions')->with('status', 'Contribution recorded and posted to the ledger.'),
+            'deduction' => redirect()->route('swf.deductions')->with('status', 'Deduction recorded and posted to the ledger.'),
+            default => redirect()->route('swf.claims')->with('status', 'Claim recorded and posted to the ledger.'),
         };
     }
 
@@ -158,6 +160,6 @@ class SwfController extends Controller
     {
         $entry->delete();
 
-        return back()->with('status', 'SWF entry removed.');
+        return back()->with('status', 'SWF entry removed (journal reversed).');
     }
 }

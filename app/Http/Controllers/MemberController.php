@@ -12,6 +12,9 @@ class MemberController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        if (function_exists('is_applicant_incomplete') && is_applicant_incomplete($user)) {
+            return redirect()->route('join.index');
+        }
         if ($user && method_exists($user, 'hasRole')
             && $user->hasRole('member')
             && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
@@ -82,6 +85,9 @@ class MemberController extends Controller
     public function show(Member $member)
     {
         $user = auth()->user();
+        if (function_exists('is_applicant_incomplete') && is_applicant_incomplete($user)) {
+            return redirect()->route('join.index');
+        }
         if ($user && method_exists($user, 'hasRole')
             && $user->hasRole('member')
             && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {

@@ -68,13 +68,15 @@ class DepositController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        Deposit::create([
-            ...$data,
-            'receipt_no' => 'DP-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'received_by' => auth()->id(),
-        ]);
+        $deposit = \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            return Deposit::create([
+                ...$data,
+                'receipt_no' => 'DP-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'received_by' => auth()->id(),
+            ]);
+        });
 
-        return redirect()->route('deposits.index')->with('status', 'Deposit entry recorded.');
+        return redirect()->route('deposits.index')->with('status', 'Entry recorded and posted to the ledger.');
     }
 
     public function edit(Deposit $deposit)
@@ -96,15 +98,17 @@ class DepositController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $deposit->update($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($deposit, $data) {
+            $deposit->update($data);
+        });
 
-        return redirect()->route('deposits.index')->with('status', 'Entry updated.');
+        return redirect()->route('deposits.index')->with('status', 'Entry updated (journal reposted).');
     }
 
     public function destroy(Deposit $deposit)
     {
         $deposit->delete();
 
-        return redirect()->route('deposits.index')->with('status', 'Entry removed.');
+        return redirect()->route('deposits.index')->with('status', 'Entry removed (journal reversed).');
     }
 }

@@ -46,35 +46,41 @@ class ReceivableController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        Receivable::create([
-            ...$data,
-            'reference' => \App\Services\FinancePosting::reference($data['kind'] === 'receivable' ? 'RCV' : 'PAY'),
-            'paid_amount' => 0,
-            'status' => 'open',
-            'created_by' => auth()->id(),
-        ]);
+        $row = \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            return Receivable::create([
+                ...$data,
+                'reference' => \App\Services\FinancePosting::reference($data['kind'] === 'receivable' ? 'RCV' : 'PAY'),
+                'paid_amount' => 0,
+                'status' => 'open',
+                'created_by' => auth()->id(),
+            ]);
+        });
 
         $route = $data['kind'] === 'receivable' ? 'finance.receivables' : 'finance.payables';
 
-        return redirect()->route($route)->with('status', 'Recorded.');
+        return redirect()->route($route)->with('status', 'Recorded and posted to the ledger.');
     }
 
     public function collect(Request $request, Receivable $receivable)
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:100', 'max:'.$receivable->outstanding()],
+            'method' => ['nullable', 'in:cash,mobile,bank'],
         ]);
 
-        $receivable->increment('paid_amount', $data['amount']);
-        $receivable->update(['status' => $receivable->fresh()->outstanding() <= 0 ? 'paid' : 'partial']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($receivable, $data) {
+            $receivable->increment('paid_amount', $data['amount']);
+            $receivable->update(['status' => $receivable->fresh()->outstanding() <= 0 ? 'paid' : 'partial']);
+            \App\Services\FinancePosting::postReceivableCollection($receivable->fresh(), (float) $data['amount'], $data['method'] ?? 'cash');
+        });
 
-        return back()->with('status', 'Payment recorded.');
+        return back()->with('status', 'Payment recorded and posted to the ledger.');
     }
 
     public function destroy(Receivable $receivable)
     {
         $receivable->delete();
 
-        return back()->with('status', 'Record removed.');
+        return back()->with('status', 'Record removed (journals reversed).');
     }
 }

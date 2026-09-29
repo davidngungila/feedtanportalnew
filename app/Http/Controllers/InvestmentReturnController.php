@@ -41,15 +41,17 @@ class InvestmentReturnController extends Controller
         ]);
 
         $data['paid_by'] = auth()->id();
-        InvestmentReturn::create($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            InvestmentReturn::create($data);
+        });
 
-        return redirect()->route('investment-returns.index')->with('status', 'Investment return recorded.');
+        return redirect()->route('investment-returns.index')->with('status', 'Investment return recorded and posted to the ledger.');
     }
 
     public function destroy(InvestmentReturn $investmentReturn)
     {
         $investmentReturn->delete();
 
-        return redirect()->route('investment-returns.index')->with('status', 'Return removed.');
+        return redirect()->route('investment-returns.index')->with('status', 'Return removed (journal reversed).');
     }
 }

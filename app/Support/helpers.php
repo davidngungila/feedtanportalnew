@@ -129,6 +129,76 @@ if (! function_exists('role_names')) {
             'investment_officer' => 'Investment Officer',
             'loan_officer' => 'Loan Officer',
             'member' => 'Member',
+            'applicant' => 'Applicant',
         ];
+    }
+}
+
+if (! function_exists('linked_member')) {
+    /**
+     * Member profile linked to a user (direct link, then email fallback).
+     */
+    function linked_member($user): ?Member
+    {
+        if (! $user) {
+            return null;
+        }
+        if ($user->member_id && $user->relationLoaded('member') && $user->member) {
+            return $user->member;
+        }
+        if ($user->member_id && $member = Member::find($user->member_id)) {
+            return $member;
+        }
+        if ($user->email && $member = Member::where('email', $user->email)->first()) {
+            return $member;
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('is_applicant_incomplete')) {
+    /**
+     * True when the user still needs to finish member registration:
+     * carries the applicant role without an approved, active member profile.
+     */
+    function is_applicant_incomplete($user): bool
+    {
+        if (! $user || ! method_exists($user, 'roleSlugs')) {
+            return false;
+        }
+        // Raw slugs (no admin-bypass): anyone holding a staff or member role is not an applicant.
+        $slugs = array_map(fn ($s) => $s === 'admin' ? 'administrator' : $s, $user->roleSlugs());
+        if (array_intersect($slugs, ['administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer', 'member'])) {
+            return false;
+        }
+        if (! in_array('applicant', $slugs, true)) {
+            return false;
+        }
+        // Already linked to an active profile → effectively onboarded.
+        $member = function_exists('linked_member') ? linked_member($user) : null;
+
+        return ! ($member && $member->status === 'active');
+    }
+}
+
+if (! function_exists('home_route_for')) {
+    /**
+     * Where a user should land: onboarding → member portal → staff dashboard.
+     */
+    function home_route_for($user): string
+    {
+        if (! $user) {
+            return 'login';
+        }
+        if (function_exists('is_applicant_incomplete') && is_applicant_incomplete($user)) {
+            return 'join.index';
+        }
+        if (method_exists($user, 'hasRole') && $user->hasRole('member')
+            && ! $user->hasRole('administrator', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer')) {
+            return 'portal.home';
+        }
+
+        return 'dashboard';
     }
 }

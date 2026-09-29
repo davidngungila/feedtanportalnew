@@ -18,6 +18,25 @@ class FinanceStatementController extends Controller
         return view('finance.statements');
     }
 
+    public function trialBalance(Request $request)
+    {
+        $asOf = $request->get('as_of', now()->toDateString());
+
+        $rows = FinanceAccount::orderBy('code')->get()->map(function ($a) use ($asOf) {
+            $dr = $a->postedDebit(null, $asOf) + (in_array($a->type, ['asset', 'expense'], true) ? (float) $a->opening_balance : 0);
+            $cr = $a->postedCredit(null, $asOf) + (in_array($a->type, ['asset', 'expense'], true) ? 0 : (float) $a->opening_balance);
+
+            return ['account' => $a, 'debit' => $dr - min($dr, $cr), 'credit' => $cr - min($dr, $cr)];
+        })->filter(fn ($r) => abs($r['debit']) > 0.004 || abs($r['credit']) > 0.004)->values();
+
+        return view('finance.trial-balance', [
+            'asOf' => $asOf,
+            'rows' => $rows,
+            'totalDebit' => $rows->sum('debit'),
+            'totalCredit' => $rows->sum('credit'),
+        ]);
+    }
+
     public function income(Request $request)
     {
         $from = $request->get('from', now()->startOfYear()->toDateString());

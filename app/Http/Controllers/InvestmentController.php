@@ -68,21 +68,30 @@ class InvestmentController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $investment = Investment::create([
-            ...$data,
-            'investment_no' => 'INV-'.now()->format('YmdHis').'-'.random_int(100, 999),
-            'expected_return' => round($data['amount'] * $data['expected_return_rate'] / 100, 2),
-            'created_by' => auth()->id(),
-        ]);
+        $investment = \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            return Investment::create([
+                ...$data,
+                'investment_no' => 'INV-'.now()->format('YmdHis').'-'.random_int(100, 999),
+                'expected_return' => round($data['amount'] * $data['expected_return_rate'] / 100, 2),
+                'created_by' => auth()->id(),
+            ]);
+        });
 
-        return redirect()->route('investments.index')->with('status', 'Investment recorded.');
+        return redirect()->route('investments.index')->with('status', 'Investment recorded and posted to the ledger.');
     }
 
     public function show(Investment $investment)
     {
         $investment->load(['member', 'product', 'returns', 'payouts.member']);
+        $returnIds = $investment->returns->pluck('id');
+        $payoutIds = $investment->payouts->pluck('id');
+        $journals = \App\Models\JournalEntry::where(function ($q) use ($investment, $returnIds, $payoutIds) {
+            $q->where(fn ($w) => $w->where('source_type', \App\Models\Investment::class)->where('source_id', $investment->id))
+                ->orWhere(fn ($w) => $w->where('source_type', \App\Models\InvestmentReturn::class)->whereIn('source_id', $returnIds))
+                ->orWhere(fn ($w) => $w->where('source_type', \App\Models\InvestmentPayout::class)->whereIn('source_id', $payoutIds));
+        })->latest('entry_date')->get();
 
-        return view('investments.show', compact('investment'));
+        return view('investments.show', compact('investment', 'journals'));
     }
 
     public function member(\App\Models\Member $member)
@@ -115,7 +124,9 @@ class InvestmentController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $investment->update($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($investment, $data) {
+            $investment->update($data);
+        });
 
         return redirect()->route('investments.show', $investment)->with('status', 'Investment updated.');
     }
@@ -124,6 +135,6 @@ class InvestmentController extends Controller
     {
         $investment->delete();
 
-        return redirect()->route('investments.index')->with('status', 'Investment removed.');
+        return redirect()->route('investments.index')->with('status', 'Investment removed (journals reversed).');
     }
 }

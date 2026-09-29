@@ -107,6 +107,8 @@
             <button type="submit" class="btn" id="loginBtn">Sign in</button>
         </form>
 
+        <div class="hint" style="margin-top:16px;">New here? <a href="{{ route('register') }}" style="color:var(--terracotta-600);font-weight:700;">Create an account</a> and finish membership step by step.</div>
+
        
     <script>
         const loader = document.getElementById('pageLoader');

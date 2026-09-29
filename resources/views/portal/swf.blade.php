@@ -3,7 +3,7 @@
 @section('content')
     <div class="view-head">
         <div><h2>My SWF</h2><p class="sub">{{ $member->name }} · Balance <b>@money($balance)</b> · Contributions minus claims &amp; deductions.</p></div>
-        <div class="view-actions"><a href="{{ route('portal.home') }}" class="btn btn-ghost">Portal</a><a href="{{ route('portal.statements', ['kind' => 'swf']) }}" class="btn btn-soft">Statement</a></div>
+        <div class="view-actions"><a href="{{ route('portal.home') }}" class="btn btn-ghost">Portal</a><a href="{{ route('portal.statements', ['kind' => 'swf']) }}" class="btn btn-soft">Statement</a><a href="{{ route('portal.swf.create') }}" class="btn btn-primary">+ New entry</a></div>
     </div>
     <div class="table-card"><div class="table-scroll"><table>
         <thead><tr><th>Receipt</th><th>Type</th><th>Amount</th><th>Date</th><th>Reason</th></tr></thead>

@@ -65,7 +65,8 @@
                 @forelse($postings['repayments'] as $r)<tr><td>Loan repayment</td><td class="cell-title">{{ $r->receipt_no }}</td><td>@money($r->amount)</td><td>{{ $r->paid_at?->format('d M Y') }}</td></tr>@empty @endforelse
                 @forelse($postings['swf'] as $r)<tr><td>SWF contribution</td><td class="cell-title">{{ $r->receipt_no }}</td><td>@money($r->amount)</td><td>{{ $r->transacted_at?->format('d M Y') }}</td></tr>@empty @endforelse
                 @forelse($postings['finance'] as $r)<tr><td>Book entry</td><td class="cell-title">{{ $r->reference }}</td><td>@money($r->amount)</td><td>{{ $r->transacted_at?->format('d M Y') }}</td></tr>@empty @endforelse
-                @if($postings['repayments']->isEmpty() && $postings['swf']->isEmpty() && $postings['finance']->isEmpty())
+                @if($postings['settlement'])<tr><td>Ledger settlement</td><td class="cell-title">@if(is_role('administrator','chairperson','accountant','secretary'))<a href="{{ route('finance.journals.show', $postings['settlement']) }}">{{ $postings['settlement']->reference }}</a>@else{{ $postings['settlement']->reference }}@endif</td><td>@money($postings['settlement']->totalDebit())</td><td>{{ $postings['settlement']->entry_date?->format('d M Y') }}</td></tr>@endif
+                @if($postings['repayments']->isEmpty() && $postings['swf']->isEmpty() && $postings['finance']->isEmpty() && ! $postings['settlement'])
                 <tr><td colspan="4" class="empty-state">Nothing posted yet — pay after verification.</td></tr>
                 @endif
             </tbody>
