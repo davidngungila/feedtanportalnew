@@ -47,8 +47,9 @@
         .error{background:var(--danger-100);color:var(--danger);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;margin-bottom:16px;}
         .foot{margin-top:20px;text-align:center;font-size:13px;color:var(--ink-soft);}
         .foot a{color:var(--terracotta-600);font-weight:700;}
-        .steps{display:flex;gap:6px;justify-content:center;margin-bottom:6px;flex-wrap:wrap;}
-        .steps span{font-size:11px;font-weight:700;background:var(--sand-100);border:1px solid var(--line);border-radius:20px;padding:4px 11px;color:var(--coffee-700);white-space:nowrap;}
+        @media (max-width:640px){
+            .form-row{grid-template-columns:1fr;}
+        }
         @media (max-width:520px){
             body{padding:14px;}
             .login-card{padding:28px 20px;border-radius:16px;}
@@ -74,8 +75,6 @@
         </div>
         <h1>Create your account</h1>
         <p class="sub">Sign up, then finish membership step by step.</p>
-        <div class="steps"><span>1 · Account</span><span>2 · Details</span><span>3 · Approval</span><span>4 · Services</span></div>
-
         @if ($errors->any())
             <div class="error">{{ $errors->first() }}</div>
         @endif
