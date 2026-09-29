@@ -104,11 +104,6 @@
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px;border-radius:12px;border:none;font-weight:800;font-size:15.5px;font-family:inherit;background:linear-gradient(155deg,var(--terracotta-500),var(--terracotta-600));color:#fff;box-shadow:0 8px 20px rgba(194,89,43,.35);margin-top:14px}
         .btn:active{transform:translateY(1px)}
         .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
-        .btn-accept{background:linear-gradient(155deg,var(--acacia-500),var(--acacia-600));box-shadow:0 8px 20px rgba(94,110,63,.35)}
-        .btn-reject{background:var(--white);color:var(--danger);border:1.5px solid var(--danger);box-shadow:none}
-        .choice-row{display:flex;gap:10px;margin-top:14px}
-        .choice-row .btn{margin-top:0}
-        @media (max-width:420px){.choice-row{flex-direction:column}}
         .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
         .hidden-step{display:none}
         .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
@@ -256,30 +251,10 @@
     @else
         <section class="card anim">
             <div class="card-b" style="padding-top:6px">
-                <div id="choiceStep">
-                    <div style="text-align:center;padding:14px 0 4px">
-                        <div class="big-ico" style="width:60px;height:60px;border-radius:20px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--gold-100);color:#8a6418"><i class="fa-solid fa-circle-question"></i></div>
-                        <h3 style="margin:0;font-size:18px">Je, taarifa hizi ni sahihi?</h3>
-                        <p style="font-size:13px;color:var(--ink-soft);margin:6px 0 0">Angalia muhtasari hapo juu, kisha chagua.</p>
-                    </div>
-                    <div class="choice-row">
-                        <button type="button" class="btn btn-accept" id="acceptBtn"><i class="fa-solid fa-check"></i><span>Ndiyo — Endelea</span></button>
-                        <button type="button" class="btn btn-reject" id="rejectBtn"><i class="fa-solid fa-xmark"></i><span>Hapana — Kataa</span></button>
-                    </div>
-                </div>
-                <div id="rejectStep" class="hidden-step">
-                    <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Andika sababu ya kukataa</div>
-                    <form method="POST" action="{{ route('verify.reject', $payout) }}" id="rejectForm">
-                        @csrf
-                        <div class="field"><label>Sababu *</label><textarea name="rejection_reason" rows="4" required placeholder="Eleza tatizo lililopo kwenye taarifa…"></textarea></div>
-                        <button type="submit" class="btn" id="rejectSubmitBtn"><i class="fa-solid fa-paper-plane"></i><span>Tuma sababu</span></button>
-                        <button type="button" class="btn btn-back" id="rejectBackBtn"><i class="fa-solid fa-arrow-left"></i><span>Rudi nyuma</span></button>
-                    </form>
-                </div>
                 @if($payout->net_cash > 0)
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}" novalidate>
                     @csrf
-                    <div id="allocStep" class="hidden-step">
+                    <div id="allocStep">
                         <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Jaza mgawanyo wako — sehemu zote kwa ukurasa mmoja</div>
                         <div class="chip-row">
                             <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Weka yote taslimu</button>
@@ -302,7 +277,6 @@
                         </div>
                         <div class="mini-err" id="miniErr"></div>
                         <button type="button" class="btn" id="nextBtn"><span>Endelea — Hakiki</span><i class="fa-solid fa-arrow-right"></i></button>
-                        <div style="text-align:center"><button type="button" class="wiz-back" id="wizBack"><i class="fa-solid fa-arrow-left"></i> Rudi nyuma</button></div>
                     </div>
                     <div id="previewStep" class="hidden-step">
                         <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Hakiki mgawanyo wako</div>
@@ -348,7 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const clearBtn = document.getElementById('clearAll');
     const nextBtn = document.getElementById('nextBtn');
     const backBtn = document.getElementById('backBtn');
-    const wizBack = document.getElementById('wizBack');
     const fmt = n => 'TZS ' + Math.round(n).toLocaleString('en-US');
     const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
     function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
@@ -373,11 +346,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewNotesRow = document.getElementById('previewNotesRow');
     const previewNotes = document.getElementById('previewNotes');
     const miniErr = document.getElementById('miniErr');
-    const choiceStep = document.getElementById('choiceStep');
-    const rejectStep = document.getElementById('rejectStep');
-    const acceptBtn = document.getElementById('acceptBtn');
-    const rejectBtn = document.getElementById('rejectBtn');
-    const rejectBackBtn = document.getElementById('rejectBackBtn');
     function checkRules(){
         let neg = false;
         allocInputs.forEach(i => { if (parseFloat(i.value) < 0) neg = true; });
@@ -435,33 +403,6 @@ document.addEventListener('DOMContentLoaded', function () {
         allocInputs.forEach(i => { i.value = 0; });
         hideErr();
         recalc();
-    });
-    if (wizBack) wizBack.addEventListener('click', showChoice);
-    function showChoice(){
-        if (choiceStep) choiceStep.classList.remove('hidden-step');
-        if (allocStep) allocStep.classList.add('hidden-step');
-        if (rejectStep) rejectStep.classList.add('hidden-step');
-        hideErr();
-        if (choiceStep) choiceStep.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-    if (acceptBtn) acceptBtn.addEventListener('click', () => {
-        if (choiceStep) choiceStep.classList.add('hidden-step');
-        if (allocStep) allocStep.classList.remove('hidden-step');
-        hideErr();
-        recalc();
-        if (allocStep) allocStep.scrollIntoView({behavior:'smooth', block:'start'});
-    });
-    if (rejectBtn) rejectBtn.addEventListener('click', () => {
-        if (choiceStep) choiceStep.classList.add('hidden-step');
-        if (rejectStep) rejectStep.classList.remove('hidden-step');
-        hideErr();
-        if (rejectStep) rejectStep.scrollIntoView({behavior:'smooth', block:'center'});
-    });
-    if (rejectBackBtn) rejectBackBtn.addEventListener('click', showChoice);
-    const rejectForm = document.getElementById('rejectForm');
-    if (rejectForm) rejectForm.addEventListener('submit', function () {
-        const rb = document.getElementById('rejectSubmitBtn');
-        if (rb) { rb.disabled = true; rb.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Inatuma…</span>'; }
     });
     allocInputs.forEach(i => i.addEventListener('input', () => { hideErr(); recalc(); }));
     if (nextBtn) nextBtn.addEventListener('click', goPreview);
