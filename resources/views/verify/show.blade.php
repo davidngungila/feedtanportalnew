@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     <style>
         :root{
             --sand-50:#FBF7EF; --sand-100:#F4ECDC; --sand-200:#E9DCC0;
@@ -61,16 +63,10 @@
         .amount-card .val{font-size:38px;font-weight:800;color:var(--terracotta-600);margin:6px 0 2px;letter-spacing:-.02em;overflow-wrap:anywhere}
         .amount-card .sub{font-size:12.5px;color:var(--ink-soft)}
         /* ---------- stepper ---------- */
-        .steps{display:flex;align-items:flex-start;margin:18px 4px 0}
-        .step{flex:1;text-align:center;position:relative;font-size:11px;font-weight:700;color:var(--ink-soft)}
-        .step .n{width:30px;height:30px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:var(--white);border:2px solid var(--line);color:var(--ink-soft)}
-        .step::before{content:"";position:absolute;top:15px;left:-50%;width:100%;height:2px;background:var(--line);z-index:-1}
-        .step:first-child::before{display:none}
-        .step.on{color:var(--terracotta-600)}
-        .step.on .n{background:var(--terracotta-600);border-color:var(--terracotta-600);color:#fff}
-        .step.done{color:var(--acacia-600)}
-        .step.done .n{background:var(--acacia-600);border-color:var(--acacia-600);color:#fff}
-        .step.done::before{background:var(--acacia-500)}
+        /* ---------- active stage only ---------- */
+        .stage-now{display:flex;align-items:center;justify-content:center;gap:9px;margin:18px 4px 0;background:var(--white);border:1.5px solid var(--line);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:800;color:var(--terracotta-600);box-shadow:var(--shadow-sm)}
+        .stage-now.stage-verified,.stage-now.stage-paid{color:var(--acacia-600);border-color:var(--acacia-500)}
+        .stage-now.stage-rejected{color:var(--danger);border-color:var(--danger)}
         /* ---------- cards ---------- */
         .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--shadow-sm);margin-top:16px;overflow:hidden}
         .card-h{padding:16px 20px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
@@ -165,12 +161,15 @@
         <div class="sub">baada ya makato yote · {{ $payout->member->name ?? '—' }}</div>
     </div>
 
-    @php $st = $payout->status; @endphp
-    <div class="steps">
-        <div class="step done"><div class="n"><i class="fa-solid fa-check"></i></div>Angalia</div>
-        <div class="step {{ $st === 'pending' ? 'on' : 'done' }}"><div class="n">@if($st === 'pending')2 @else<i class="fa-solid fa-check"></i>@endif</div>Thibitisha</div>
-        <div class="step {{ $st === 'paid' ? 'done' : ($st === 'verified' ? 'on' : '') }}"><div class="n">@if($st === 'paid')<i class="fa-solid fa-check"></i>@else 3 @endif</div>Pokea</div>
-    </div>
+    @php
+        $stage = match($payout->status) {
+            'paid' => ['Imekamilika — umeshalipwa', 'fa-circle-check', 'paid'],
+            'verified' => ['Imethibitishwa — subiri malipo', 'fa-hourglass-half', 'verified'],
+            'rejected' => ['Imekataliwa — tumepokea sababu yako', 'fa-circle-xmark', 'rejected'],
+            default => ['Hatua ya sasa: Kuthibitisha', 'fa-pen-to-square', 'pending'],
+        };
+    @endphp
+    <div class="stage-now stage-{{ $stage[2] }}"><i class="fa-solid {{ $stage[1] }}"></i><span>{{ $stage[0] }}</span></div>
 
     @if(session('status'))<div class="ok-banner anim">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="err-banner anim">{{ $errors->first() }}</div>@endif
