@@ -7,7 +7,12 @@
     </div>
     <div class="panel-grid">
         <div class="panel"><div class="panel-head"><h3>Membership</h3><span class="tag {{ status_badge($member->status) }}">{{ ucfirst($member->status) }}</span></div>
-            <div class="panel-body"><div class="detail-grid">
+            <div class="panel-body">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                @if($user->avatarUrl())<img src="{{ $user->avatarUrl() }}" alt="Profile photo" style="width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid var(--line);flex:none;">@else<div class="avatar" style="width:76px;height:76px;font-size:24px;flex:none;">{{ strtoupper(substr($member->name, 0, 1)) }}</div>@endif
+                <div><div class="cell-title" style="font-size:16px;">{{ $member->name }}</div><div class="cell-sub">{{ $member->member_no }} · profile photo from your application</div></div>
+            </div>
+            <div class="detail-grid">
                 <div class="detail-item"><div class="dk">Full name</div><div class="dv">{{ $member->name }}</div></div>
                 <div class="detail-item"><div class="dk">Member no</div><div class="dv">{{ $member->member_no }}</div></div>
                 <div class="detail-item"><div class="dk">Phone</div><div class="dv">{{ $member->phone }}</div></div>

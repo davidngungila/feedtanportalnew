@@ -45,7 +45,7 @@
                 <div class="field"><label>Mobile number *</label><input name="phone" value="{{ old('phone', $app->phone) }}" placeholder="07…" required></div>
                 <div class="field"><label>NIDA ID number</label><input name="national_id" value="{{ old('national_id', $app->national_id) }}" placeholder="e.g. 19900101-00000-00001-01"></div>
             </div>
-            <div class="field"><label>Passport-size picture (jpg/png — resized to 500px automatically)</label><input type="file" name="passport_picture" accept=".jpg,.jpeg,.png">@if(! empty($app->attachments['passport']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ <a href="{{ Storage::disk('public')->url($app->attachments['passport']) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">view</a> · re-upload to replace</div>@endif</div>
+                <div class="field"><label>Passport-size picture (jpg/png — resized to 500px automatically)</label><input type="file" name="passport_picture" accept=".jpg,.jpeg,.png">@if(! empty($app->attachments['passport']))<div style="display:flex;align-items:center;gap:12px;margin-top:10px;"><img src="{{ Storage::disk('public')->url($app->attachments['passport']) }}" alt="Passport preview" style="width:96px;height:96px;border-radius:12px;object-fit:cover;border:1.5px solid var(--line);box-shadow:var(--shadow-sm);"><div class="cell-sub">Preview ✓ This photo becomes<br>your profile picture.<br><a href="{{ Storage::disk('public')->url($app->attachments['passport']) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">view full</a> · re-upload to replace</div></div>@endif</div>
             <button class="btn btn-primary" type="submit">Save &amp; continue →</button>
         </form>
         <script>

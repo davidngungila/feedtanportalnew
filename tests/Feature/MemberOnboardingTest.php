@@ -137,6 +137,27 @@ class MemberOnboardingTest extends TestCase
         $this->actingAs($user->fresh())->get(route('join.status'))->assertOk()->assertSee('Open my portal');
     }
 
+    public function test_approval_uses_passport_as_profile_photo(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $admin = $this->makeAdmin();
+        $user = User::create(['name' => 'P', 'email' => 'p@test.local', 'password' => 'secret123', 'role' => 'applicant']);
+        $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
+        $photo = \Illuminate\Http\UploadedFile::fake()->image('face.jpg', 800, 600)->store('applications', 'public');
+        $app = MemberApplication::create([
+            'user_id' => $user->id, 'current_step' => 5, 'name' => 'P Person',
+            'phone' => '0711000040', 'email' => 'p@test.local', 'status' => 'pending',
+            'attachments' => ['passport' => $photo],
+        ]);
+
+        $this->actingAs($admin)->post(route('member-applications.approve', $app))->assertRedirect();
+
+        $user->refresh();
+        $this->assertNotNull($user->avatar_path);
+        $this->assertNotNull($user->avatarUrl());
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($user->avatar_path);
+    }
+
     public function test_staff_can_review_full_file_and_approval_carries_details(): void
     {
         $admin = $this->makeAdmin();

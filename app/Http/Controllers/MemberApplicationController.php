@@ -108,6 +108,14 @@ class MemberApplicationController extends Controller
                 $loginUser->roles()->sync(\App\Models\Role::whereIn('slug', $slugs)->pluck('id'));
                 $staff = array_values(array_intersect($slugs, ['administrator', 'admin', 'chairperson', 'secretary', 'accountant', 'loan_officer', 'deposit_officer', 'investment_officer', 'swf_officer']));
                 $loginUser->update(['role' => $staff[0] ?? 'member']);
+
+                // Use the passport photo as the login profile picture.
+                $passport = $memberApplication->attachments['passport'] ?? null;
+                if ($passport && ! $loginUser->avatar_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($passport)) {
+                    $avatar = 'avatars/'.basename($passport);
+                    \Illuminate\Support\Facades\Storage::disk('public')->copy($passport, $avatar);
+                    $loginUser->update(['avatar_path' => $avatar]);
+                }
             }
 
             $memberApplication->update(['status' => 'approved', 'reviewed_by' => auth()->id()]);
