@@ -442,6 +442,11 @@
             outline:none;border-color:var(--terracotta-500);box-shadow:0 0 0 3px var(--terracotta-100);
         }
         .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .form-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+        .form-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+        .detail-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 20px;}
+        .strip-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+        .ben-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:10px;align-items:end;}
         .net-picker{position:relative;}
         .net-picker-btn{
             width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -553,17 +558,25 @@
             .panel-grid{grid-template-columns:1fr;}
             .settings-layout{grid-template-columns:1fr;}
             .form-layout{grid-template-columns:1fr;}
+            .ben-grid{grid-template-columns:1fr 1fr 1fr;}
         }
         @media (max-width:900px){
             .sidebar{transform:translateX(-100%);width:var(--sidebar-w);z-index:300;}
             .sidebar.mobile-open{transform:translateX(0);}
             .main{margin-left:0 !important;}
             .tb-search{display:none;}
+            .form-row-4,.detail-grid-4,.strip-4{grid-template-columns:repeat(2,1fr);}
+            .ben-grid{grid-template-columns:1fr 1fr;}
         }
 @media (max-width:640px){
             .view-wrap{padding:16px;}
             .topbar{padding:0 14px;gap:10px;}
             .form-row,.detail-grid{grid-template-columns:1fr;}
+            .form-row-3,.form-row-4,.detail-grid-4,.strip-4,.ben-grid{grid-template-columns:1fr;}
+            .ben-grid .btn{width:100%;}
+            .view-head{align-items:stretch;flex-direction:column;}
+            .view-actions{width:100%;}
+            .view-actions .btn{flex:1;justify-content:center;}
             .tb-search{display:none;}
             .tb-live span{display:none;}
             .tb-user-text{display:none;}

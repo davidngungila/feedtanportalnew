@@ -118,7 +118,6 @@ class JoinController extends Controller
                 'marital_status' => ['nullable', 'in:single,married,divorced,widowed'],
                 'phone' => ['required', 'string', 'max:30'],
                 'national_id' => ['nullable', 'string', 'max:60'],
-                'nida_picture' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
             2 => $request->validate([
                 'email' => ['nullable', 'email'],
@@ -168,7 +167,7 @@ class JoinController extends Controller
         };
 
         $update = collect($data)->except([
-            'nida_picture', 'passport_picture', 'payment_slips', 'standing_order',
+            'passport_picture', 'payment_slips', 'standing_order',
             'subscription_slip', 'application_letter', 'pay_entrance', 'pay_capital',
             'pay_phase2', 'pay_phase2_mode', 'payment_refs', 'beneficiaries',
             'consider_ordinary', 'group_registered',
@@ -199,7 +198,7 @@ class JoinController extends Controller
 
         // Attachments merge with previously uploaded files.
         $attachments = $app->attachments ?? [];
-        foreach (['nida_picture' => 'nida', 'passport_picture' => 'passport', 'standing_order' => 'standing_order', 'subscription_slip' => 'subscription_slip', 'application_letter' => 'application_letter'] as $field => $key) {
+        foreach (['passport_picture' => 'passport', 'standing_order' => 'standing_order', 'subscription_slip' => 'subscription_slip', 'application_letter' => 'application_letter'] as $field => $key) {
             if ($request->hasFile($field)) {
                 if (! empty($attachments[$key]) && is_string($attachments[$key])) {
                     Storage::disk('public')->delete($attachments[$key]);

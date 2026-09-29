@@ -81,14 +81,14 @@ class MemberOnboardingTest extends TestCase
         $user = User::create(['name' => 'U', 'email' => 'u@test.local', 'password' => 'secret123', 'role' => 'applicant']);
         $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
 
-        $this->actingAs($user)->post(route('join.save', eid(1)), [
-            'name' => 'U Person', 'phone' => '0711000011',
-            'nida_picture' => \Illuminate\Http\UploadedFile::fake()->image('nida.jpg'),
+        $this->actingAs($user)->post(route('join.save', eid(2)), [
+            'address' => 'Mwanza',
+            'passport_picture' => \Illuminate\Http\UploadedFile::fake()->image('passport.jpg'),
         ])->assertRedirect();
 
         $app = MemberApplication::where('user_id', $user->id)->first();
-        $this->assertNotEmpty($app->attachments['nida'] ?? null);
-        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($app->attachments['nida']);
+        $this->assertNotEmpty($app->attachments['passport'] ?? null);
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($app->attachments['passport']);
     }
 
     public function test_status_page_renders_for_every_state(): void

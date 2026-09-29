@@ -6,7 +6,7 @@
         @if($app->status === 'approved')<div class="view-actions"><a href="{{ route('portal.home') }}" class="btn btn-primary">Open my portal</a></div>@endif
     </div>
 
-    <div class="balance-strip" style="grid-template-columns:repeat(4,1fr);">
+    <div class="strip-4">
         <div class="balance-box" style="border-color:var(--acacia-500);"><div class="bb-label">✓ Step 1 · Account</div><div class="bb-amount" style="font-size:15px;">Created</div><div class="bb-sub">{{ $app->created_at->format('d M Y') }}</div></div>
         <div class="balance-box" style="border-color:var(--acacia-500);"><div class="bb-label">✓ Step 2 · Details</div><div class="bb-amount" style="font-size:15px;">Submitted</div><div class="bb-sub">{{ $app->updated_at->format('d M Y') }}</div></div>
         <div class="balance-box" style="@if($app->status === 'pending')border-color:var(--gold-500);box-shadow:0 0 0 3px var(--gold-100);@elseif($app->status === 'approved')border-color:var(--acacia-500);@elseif($app->status === 'rejected')border-color:var(--danger);@endif"><div class="bb-label">@if($app->status === 'pending')● Step 3 · Review @elseif($app->status === 'approved')✓ Step 3 · Review @else Step 3 · Review @endif</div><div class="bb-amount" style="font-size:15px;">{{ ucfirst($app->status) }}</div><div class="bb-sub">@if($app->reviewed_by)By {{ \App\Models\User::find($app->reviewed_by)->name ?? 'office' }}@else Awaiting office @endif</div></div>

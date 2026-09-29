@@ -12,7 +12,7 @@
         </div>
     </div>
 
-    <div class="balance-strip" style="grid-template-columns:repeat(4,1fr);">
+    <div class="strip-4">
         <div class="balance-box"><div class="bb-label">Status</div><div class="bb-amount" style="font-size:18px;"><span class="tag {{ status_badge($application->status) }}">{{ ucfirst($application->status) }}</span></div></div>
         <div class="balance-box"><div class="bb-label">Type applied</div><div class="bb-amount" style="font-size:18px;">{{ $application->memberType->name ?? '—' }}</div></div>
         <div class="balance-box"><div class="bb-label">Contributions ticked</div><div class="bb-amount" style="font-size:18px;">{{ collect($application->contributions ?? [])->only(['entrance_fee', 'capital_contribution', 'phase2'])->filter()->count() }} / 3</div></div>
@@ -76,7 +76,7 @@
             </div>
             <div class="receipt">
                 @php $files = $application->attachments ?? []; @endphp
-                @foreach(['passport' => 'Passport picture', 'nida' => 'NIDA picture', 'standing_order' => 'Standing order', 'subscription_slip' => 'Subscription slip', 'application_letter' => 'Application letter'] as $k => $label)
+                @foreach(['passport' => 'Passport picture', 'standing_order' => 'Standing order', 'subscription_slip' => 'Subscription slip', 'application_letter' => 'Application letter'] as $k => $label)
                     @if(! empty($files[$k]))
                     <div class="receipt-row"><span>{{ $label }}</span><b><a href="{{ Storage::disk('public')->url($files[$k]) }}" target="_blank" style="color:var(--terracotta-600);">Open →</a></b></div>
                     @endif
