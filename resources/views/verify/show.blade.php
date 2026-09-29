@@ -108,6 +108,13 @@
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px;border-radius:12px;border:none;font-weight:800;font-size:15.5px;font-family:inherit;background:linear-gradient(155deg,var(--terracotta-500),var(--terracotta-600));color:#fff;box-shadow:0 8px 20px rgba(194,89,43,.35);margin-top:14px}
         .btn:active{transform:translateY(1px)}
         .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
+        .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
+        .substeps{display:flex;gap:8px;margin:14px 20px 0}
+        .substep{flex:1;text-align:center;font-size:11px;font-weight:800;color:var(--ink-soft);padding:8px 4px;border-radius:20px;background:var(--sand-100)}
+        .substep.on{background:var(--terracotta-600);color:#fff}
+        .substep.ok{background:var(--acacia-100);color:var(--acacia-600)}
+        .hidden-step{display:none}
+        .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
         /* ---------- states ---------- */
         .ok-banner{background:var(--acacia-100);border:1.5px solid var(--acacia-500);color:var(--acacia-600);border-radius:var(--r-sm);padding:12px 15px;font-size:13.5px;font-weight:700;margin:14px 20px 0;text-align:center}
         .err-banner{background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:12px 15px;font-size:13px;font-weight:700;margin:14px 20px 0;text-align:center}
@@ -227,10 +234,12 @@
                 @if($payout->net_cash > 0)
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}">
                     @csrf
-                    <div class="chip-row">
-                        <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Weka yote taslimu</button>
-                        <button type="button" class="chip" id="clearAll"><i class="fa-solid fa-eraser"></i> Futa</button>
-                    </div>
+                    <div class="substeps"><div class="substep on" id="subA">1 · Gawa</div><div class="substep" id="subB">2 · Hakiki</div><div class="substep" id="subC">3 · Tuma</div></div>
+                    <div id="allocStep">
+                        <div class="chip-row">
+                            <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Weka yote taslimu</button>
+                            <button type="button" class="chip" id="clearAll"><i class="fa-solid fa-eraser"></i> Futa</button>
+                        </div>
                     <div class="alloc-grid">
                         <div class="field"><label>Pesa taslimu</label><div class="in-wrap"><i class="fa-solid fa-money-bill-wave"></i><input type="number" name="alloc_cash" class="alloc" min="0" step="100" value="0"></div></div>
                         <div class="field"><label>Lipa SWF</label><div class="in-wrap"><i class="fa-solid fa-shield-heart"></i><input type="number" name="alloc_swf" class="alloc" min="0" step="100" value="0"></div></div>
@@ -246,7 +255,17 @@
                         <div class="r-ico"><i class="fa-solid fa-scale-balanced"></i></div>
                         <div><small>Imebaki kugawa</small><b id="allocLeft">TZS {{ number_format($payout->net_cash, 0) }}</b></div>
                     </div>
-                    <button type="submit" class="btn" id="verifyBtn"><i class="fa-solid fa-lock"></i><span>Thibitisha sasa</span></button>
+                    <div class="mini-err" id="miniErr"></div>
+                    <button type="button" class="btn" id="nextBtn"><span>Endelea — Hakiki</span><i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                    <div id="previewStep" class="hidden-step">
+                        <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Hakiki mgawanyo wako</div>
+                        <div id="previewRows"></div>
+                        <div class="kv total"><div class="k-ico"><i class="fa-solid fa-scale-balanced"></i></div><div class="k"><b>Jumla</b></div><div class="v" id="previewTotal"></div></div>
+                        <div class="kv" id="previewNotesRow" style="display:none"><div class="k-ico"><i class="fa-solid fa-note-sticky"></i></div><div class="k">Maelezo</div><div class="v" id="previewNotes"></div></div>
+                        <button type="submit" class="btn" id="verifyBtn"><i class="fa-solid fa-lock"></i><span>Thibitisha sasa</span></button>
+                        <button type="button" class="btn btn-back" id="backBtn"><i class="fa-solid fa-arrow-left"></i><span>Rudi kurekebisha</span></button>
+                    </div>
                 </form>
                 @else
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="0" style="padding-top:14px">
@@ -275,16 +294,84 @@ document.addEventListener('DOMContentLoaded', function () {
     const allocInputs = f.querySelectorAll('.alloc');
     const fillBtn = document.getElementById('fillCash');
     const clearBtn = document.getElementById('clearAll');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+    const allocStep = document.getElementById('allocStep');
+    const previewStep = document.getElementById('previewStep');
+    const previewRows = document.getElementById('previewRows');
+    const previewTotal = document.getElementById('previewTotal');
+    const previewNotesRow = document.getElementById('previewNotesRow');
+    const previewNotes = document.getElementById('previewNotes');
+    const miniErr = document.getElementById('miniErr');
+    const subA = document.getElementById('subA');
+    const subB = document.getElementById('subB');
+    const subC = document.getElementById('subC');
     const fmt = n => 'TZS ' + Math.round(n).toLocaleString('en-US');
+    const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
+    function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
+    function showErr(msg){
+        if (!miniErr) return;
+        miniErr.textContent = msg;
+        miniErr.style.display = 'block';
+        miniErr.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+    function hideErr(){ if (miniErr) miniErr.style.display = 'none'; }
     function recalc(){
         if (!leftEl) return;
-        let sum = 0;
-        allocInputs.forEach(i => { sum += parseFloat(i.value) || 0; });
-        const left = Math.round((net - sum) * 100) / 100;
+        const left = Math.round((net - sum()) * 100) / 100;
         leftEl.textContent = fmt(left);
         const done = Math.abs(left) < 0.5;
         if (box) { box.classList.toggle('ok', done); box.classList.toggle('bad', !done); }
-        btn.disabled = !done;
+        if (nextBtn) nextBtn.disabled = !done;
+    }
+    function checkRules(){
+        const left = Math.round((net - sum()) * 100) / 100;
+        if (Math.abs(left) >= 0.5) return 'Mgao lazima ujumlishe ' + fmt(net) + '. Imebaki: ' + fmt(left) + '.';
+        if (val('alloc_reinvest') > 0 && !['2','4','6'].includes(f.querySelector('#reinvest_term').value)) return 'Chagua miaka 2, 4 au 6 kwa kuwekeza tena.';
+        if (val('alloc_savings') > 0 && !['rda','flex','emergence'].includes(f.querySelector('#savings_type').value)) return 'Chagua RDA, Flex au Emergence kwa akiba.';
+        if (val('alloc_savings') > 0 && f.querySelector('#savings_type').value === 'rda' && val('alloc_savings') <= 100000) return 'RDA inahitaji zaidi ya TZS 100,000. Chagua Flex au Emergence.';
+        return null;
+    }
+    const LABELS = [
+        ['alloc_cash', 'Pesa taslimu', 'fa-money-bill-wave'],
+        ['alloc_swf', 'Lipa SWF', 'fa-shield-heart'],
+        ['alloc_loan', 'Rejesho (mkopo)', 'fa-hand-holding-dollar'],
+        ['alloc_shares', 'Hisa za duka', 'fa-store'],
+        ['alloc_reinvest', 'Wekeza tena', 'fa-arrow-trend-up'],
+        ['alloc_savings', 'Akiba', 'fa-piggy-bank'],
+    ];
+    function goPreview(){
+        hideErr();
+        const problem = checkRules();
+        if (problem) { showErr(problem); return; }
+        let html = '';
+        LABELS.forEach(([name, label, icon]) => {
+            const amt = val(name);
+            if (amt <= 0) return;
+            let extra = '';
+            if (name === 'alloc_reinvest') extra = ' (miaka ' + f.querySelector('#reinvest_term').value + ')';
+            if (name === 'alloc_savings') extra = ' (' + f.querySelector('#savings_type').value.toUpperCase() + ')';
+            html += '<div class="kv"><div class="k-ico"><i class="fa-solid ' + icon + '"></i></div><div class="k">' + label + extra + '</div><div class="v">' + fmt(amt) + '</div></div>';
+        });
+        previewRows.innerHTML = html;
+        previewTotal.textContent = fmt(sum());
+        const notes = (document.getElementById('decision_notes') || {}).value || '';
+        if (notes.trim()) { previewNotes.textContent = notes; previewNotesRow.style.display = 'flex'; }
+        else { previewNotesRow.style.display = 'none'; }
+        allocStep.classList.add('hidden-step');
+        previewStep.classList.remove('hidden-step');
+        if (subA) { subA.classList.remove('on'); subA.classList.add('ok'); }
+        if (subB) { subB.classList.add('on'); subB.classList.remove('ok'); }
+        if (subC) { subC.classList.add('on'); }
+        previewStep.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+    function goBack(){
+        previewStep.classList.add('hidden-step');
+        allocStep.classList.remove('hidden-step');
+        if (subA) { subA.classList.add('on'); subA.classList.remove('ok'); }
+        if (subB) { subB.classList.remove('on'); }
+        if (subC) { subC.classList.remove('on'); }
+        allocStep.scrollIntoView({behavior:'smooth', block:'start'});
     }
     if (fillBtn) fillBtn.addEventListener('click', function(){
         allocInputs.forEach(i => { i.value = (i.name === 'alloc_cash') ? Math.round(net) : 0; });
@@ -295,6 +382,8 @@ document.addEventListener('DOMContentLoaded', function () {
         recalc();
     });
     allocInputs.forEach(i => i.addEventListener('input', recalc));
+    if (nextBtn) nextBtn.addEventListener('click', goPreview);
+    if (backBtn) backBtn.addEventListener('click', goBack);
     recalc();
     f.addEventListener('submit', function () {
         btn.disabled = true;
