@@ -582,7 +582,7 @@
         $isMemberArea = str_starts_with($routeName, 'members') || str_starts_with($routeName, 'member-');
         $isLoanArea = str_starts_with($routeName, 'loans') || str_starts_with($routeName, 'loan-') || str_starts_with($routeName, 'repayments');
         $isDepositArea = str_starts_with($routeName, 'deposits') || str_starts_with($routeName, 'deposit-') || str_starts_with($routeName, 'savings-');
-        $isInvestmentArea = str_starts_with($routeName, 'investment');
+        $isInvestmentArea = str_starts_with($routeName, 'investment') || str_starts_with($routeName, 'coupon') || str_starts_with($routeName, 'payouts');
         $isSwfArea = str_starts_with($routeName, 'swf');
         $isFinanceArea = str_starts_with($routeName, 'finance');
         $isReportArea = str_starts_with($routeName, 'reports');
@@ -691,6 +691,7 @@
                         @endif
                         <a href="{{ route('investments.active') }}" class="sb-drop-sub {{ $routeName === 'investments.active' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>Active Investments</a>
                         <a href="{{ route('investments.matured') }}" class="sb-drop-sub {{ $routeName === 'investments.matured' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>Matured Investments</a>
+                        <a href="{{ route('coupon.index') }}" class="sb-drop-sub {{ str_starts_with($routeName, 'coupon') ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2"></path><path d="M13 17v2"></path><path d="M13 11v2"></path></svg>Coupon Payments</a>
                         <a href="{{ route('investment-returns.index') }}" class="sb-drop-sub {{ str_starts_with($routeName, 'investment-returns') ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>Investment Returns</a>
                         <a href="{{ route('investments.create') }}" class="sb-drop-sub {{ $routeName === 'investments.create' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>New Investment</a>
                     </div>

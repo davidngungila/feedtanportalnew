@@ -4,10 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\PayoutSheetImport;
 use App\Models\FinanceAccount;
-use App\Models\FinanceTransaction;
-use App\Models\Investment;
 use App\Models\InvestmentPayout;
-use App\Models\InvestmentReturn;
 use App\Models\LoanRepayment;
 use App\Models\Member;
 use App\Models\SwfEntry;
@@ -16,23 +13,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
-class MaturedPayoutController extends Controller
+class CouponPaymentController extends Controller
 {
-    public const HEADERS = ['Name', 'Amount Earned', 'Loan installment', 'SWF deduction', 'Fines deduction', 'T-shirt deduction', 'Capital FeedTan CMG', 'Net cash'];
+    public const HEADERS = ['Name', 'Amount Earned', 'Loan installment', 'SWF deduction', 'Fines deduction', 'T-shirt deduction', 'Capital FeedTan CMG', 'Net cash', 'Phone of their payment'];
 
-    public function importForm()
+    public function index()
     {
-        $payouts = InvestmentPayout::with('member')->where('kind', 'matured')->latest()->limit(50)->get();
-        $pendingSms = InvestmentPayout::where('kind', 'matured')->where('status', 'pending')->whereNull('sms_sent_at')->count();
+        $payouts = InvestmentPayout::with('member')->where('kind', 'coupon')->latest()->limit(50)->get();
+        $pendingSms = InvestmentPayout::where('kind', 'coupon')->where('status', 'pending')->whereNull('sms_sent_at')->count();
 
-        return view('investments.matured-import', compact('payouts', 'pendingSms'));
+        return view('coupon.import', compact('payouts', 'pendingSms'));
     }
 
     public function template()
     {
-        $headers = self::HEADERS;
-        array_splice($headers, 1, 0, ['Phone']);
-        $rows = [$headers, ['Amina Juma', '0712345678', '500000', '100000', '10000', '5000', '15000', '20000', '350000']];
+        $rows = [self::HEADERS, ['Amina Juma', '500000', '100000', '10000', '5000', '15000', '20000', '350000', '0712345678']];
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
@@ -40,7 +35,7 @@ class MaturedPayoutController extends Controller
                 fputcsv($out, $r);
             }
             fclose($out);
-        }, 'matured-payout-template.csv', ['Content-Type' => 'text/csv']);
+        }, 'coupon-payment-template.csv', ['Content-Type' => 'text/csv']);
     }
 
     protected static function normKey(string $header): string
@@ -101,10 +96,12 @@ class MaturedPayoutController extends Controller
         }
 
         $headers = array_map(fn ($h) => self::normKey((string) $h), $raw[0]);
+        // Phone header may be "Phone", "Phone of their payment", etc. -> normalized keys: phone, phoneoftheirpayment.
+        $hasPhone = in_array('phone', $headers, true) || in_array('phoneoftheirpayment', $headers, true);
         $need = ['name', 'amountearned', 'netcash'];
         foreach ($need as $col) {
             if (! in_array($col, $headers, true)) {
-                return back()->withErrors(['sheet' => 'Columns must be: '.implode(', ', self::HEADERS).'. Phone is optional (needed for SMS).']);
+                return back()->withErrors(['sheet' => 'Columns must be: '.implode(', ', self::HEADERS).'.']);
             }
         }
 
@@ -122,6 +119,10 @@ class MaturedPayoutController extends Controller
             foreach ($headers as $idx => $key) {
                 $row[$key] = trim((string) ($line[$idx] ?? ''));
             }
+            // Alias long phone header to "phone".
+            if (! isset($row['phone']) || $row['phone'] === '') {
+                $row['phone'] = $row['phoneoftheirpayment'] ?? '';
+            }
 
             try {
                 DB::transaction(function () use ($row, &$imported, &$createdMembers, &$totalNet) {
@@ -135,8 +136,8 @@ class MaturedPayoutController extends Controller
             }
         }
 
-        return redirect()->route('investments.matured.import')
-            ->with('status', "Imported {$imported} payout(s), total net ".money($totalNet).". New members: {$createdMembers}. Failed: ".count($failed).'.')
+        return redirect()->route('coupon.index')
+            ->with('status', "Imported {$imported} coupon payment(s), total net ".money($totalNet).". New members: {$createdMembers}. Failed: ".count($failed).'.')
             ->with('import_failed', $failed);
     }
 
@@ -150,6 +151,9 @@ class MaturedPayoutController extends Controller
         $name = trim((string) ($row['name'] ?? ''));
         if ($name === '') {
             $fail('Name is required.');
+        }
+        if ($phone === '') {
+            $fail('Phone of their payment is required (needed for SMS verification).');
         }
         $amount = self::num($row['amountearned'] ?? '');
         $netRaw = trim((string) ($row['netcash'] ?? ''));
@@ -176,10 +180,7 @@ class MaturedPayoutController extends Controller
                 : null;
         }
 
-        $member = null;
-        if ($phone !== '') {
-            $member = Member::where('phone', $phone)->first();
-        }
+        $member = Member::where('phone', $phone)->first();
         if (! $member) {
             $member = Member::whereRaw('LOWER(name) = ?', [strtolower($name)])->first();
         }
@@ -187,36 +188,18 @@ class MaturedPayoutController extends Controller
             $member = Member::create([
                 'member_no' => 'M-'.now()->format('Ymd').'-'.str_pad((string) (Member::max('id') + 1), 4, '0', STR_PAD_LEFT),
                 'name' => $name,
-                'phone' => $phone !== '' ? $phone : 'NO-PHONE-'.strtoupper(substr(md5($name.microtime()), 0, 8)),
+                'phone' => $phone,
                 'join_date' => now()->toDateString(),
                 'status' => 'active',
-                'notes' => 'Created from matured payout import.'.($phone === '' ? ' No phone on sheet — SMS unavailable.' : ''),
+                'notes' => 'Created from coupon payment import.',
                 'created_by' => auth()->id(),
             ]);
             $createdMembers++;
         }
 
-        $investment = Investment::where('member_id', $member->id)
-            ->where('status', 'active')->latest()->first();
-        if (! $investment) {
-            $investment = Investment::create([
-                'member_id' => $member->id,
-                'investment_no' => 'INV-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                'amount' => $amount,
-                'expected_return_rate' => 0,
-                'expected_return' => 0,
-                'start_date' => now()->toDateString(),
-                'maturity_date' => now()->toDateString(),
-                'status' => 'matured',
-                'plan' => 'Payout import',
-                'notes' => 'Created from matured payout import.',
-                'created_by' => auth()->id(),
-            ]);
-        }
-
         InvestmentPayout::create([
-            'investment_id' => $investment->id,
-            'kind' => 'matured',
+            'investment_id' => null,
+            'kind' => 'coupon',
             'member_id' => $member->id,
             'phone' => $phone,
             'amount' => $amount,
@@ -236,22 +219,23 @@ class MaturedPayoutController extends Controller
 
     public function show(InvestmentPayout $payout)
     {
-        $payout->load(['member', 'investment']);
+        abort_unless($payout->kind === 'coupon', 404);
+        $payout->load(['member']);
         $code = $payout->verify_code;
 
         $postings = [
             'repayments' => LoanRepayment::with('loan')->where('notes', 'like', "%{$code}%")->get(),
             'swf' => SwfEntry::where('reason', 'like', "%{$code}%")->get(),
             'finance' => \App\Models\FinanceTransaction::with('account')->where('description', 'like', "%{$code}%")->get(),
-            'returns' => InvestmentReturn::where('notes', 'like', "%{$code}%")->get(),
             'sms' => \App\Models\SmsLog::where('investment_payout_id', $payout->id)->latest()->get(),
         ];
 
-        return view('investments.payout-show', compact('payout', 'postings'));
+        return view('coupon.show', compact('payout', 'postings'));
     }
 
     public function pay(InvestmentPayout $payout)
     {
+        abort_unless($payout->kind === 'coupon', 404);
         if ($payout->status !== 'verified') {
             return back()->withErrors(['payout' => 'Member must verify first (status is '.$payout->status.').']);
         }
@@ -260,7 +244,7 @@ class MaturedPayoutController extends Controller
             $member = $payout->member;
 
             if ($payout->loan_installment > 0) {
-                $this->applyLoan($member, (float) $payout->loan_installment, 'Matured payout deduction '.$payout->verify_code);
+                $this->applyLoan($member, (float) $payout->loan_installment, 'Coupon payout deduction '.$payout->verify_code);
             }
 
             if ($payout->swf_deduction > 0) {
@@ -271,13 +255,13 @@ class MaturedPayoutController extends Controller
                     'amount' => $payout->swf_deduction,
                     'method' => 'bank',
                     'transacted_at' => now()->toDateString(),
-                    'reason' => 'Matured payout deduction '.$payout->verify_code,
+                    'reason' => 'Coupon payout deduction '.$payout->verify_code,
                     'received_by' => auth()->id(),
                 ]);
             }
 
             $cash = FinanceAccount::where('code', '1000')->first();
-            foreach ([[$payout->fines_deduction, 'fee', 'Fines deduction '.$payout->verify_code], [$payout->tshirt_deduction, 'other', 'T-shirt deduction '.$payout->verify_code], [$payout->capital_cmg, 'other', 'Capital FeedTan CMG '.$payout->verify_code]] as [$amt, $cat, $desc]) {
+            foreach ([[$payout->fines_deduction, 'fee', 'Coupon fines deduction '.$payout->verify_code], [$payout->tshirt_deduction, 'other', 'Coupon T-shirt deduction '.$payout->verify_code], [$payout->capital_cmg, 'other', 'Coupon Capital FeedTan CMG '.$payout->verify_code]] as [$amt, $cat, $desc]) {
                 if ($amt > 0 && $cash) {
                     $tx = \App\Models\FinanceTransaction::create([
                         'reference' => FinancePosting::reference('FT'),
@@ -294,31 +278,25 @@ class MaturedPayoutController extends Controller
                 }
             }
 
-            // Member-chosen allocation of the remaining net cash.
-            foreach ($this->resolveAllocation($payout) as $kind => $item) {
-                $this->applyAllocation($payout, $member, $kind, $item);
+            if ((float) $payout->net_cash > 0 && $cash) {
+                $tx = \App\Models\FinanceTransaction::create([
+                    'reference' => FinancePosting::reference('FT'),
+                    'type' => 'expense',
+                    'category' => 'operating',
+                    'finance_account_id' => $cash->id,
+                    'member_id' => $member->id,
+                    'amount' => (float) $payout->net_cash,
+                    'transacted_at' => now()->toDateString(),
+                    'description' => 'Coupon payout cash '.$payout->verify_code,
+                    'created_by' => auth()->id(),
+                ]);
+                FinancePosting::postTransaction($tx->fresh());
             }
 
             $payout->update(['status' => 'paid', 'paid_at' => now()]);
         });
 
-        return back()->with('status', 'Payout '.$payout->verify_code.' paid and deductions applied.');
-    }
-
-    protected function resolveAllocation(InvestmentPayout $payout): array
-    {
-        if (is_array($payout->allocation) && $payout->allocation) {
-            return $payout->allocation;
-        }
-
-        // Backwards compatibility for rows verified before allocation existed.
-        $net = (float) $payout->net_cash;
-
-        return match ($payout->decision) {
-            'reinvest' => ['reinvest' => $net, 'reinvest_term' => '2'],
-            'keep_savings' => ['savings' => $net, 'savings_type' => 'flex'],
-            default => ['cash' => $net],
-        };
+        return back()->with('status', 'Coupon '.$payout->verify_code.' paid and deductions applied.');
     }
 
     protected function applyLoan(Member $member, float $amount, string $notes): void
@@ -341,92 +319,6 @@ class MaturedPayoutController extends Controller
         ]);
         if ($loan->fresh()->outstanding() <= 0) {
             $loan->update(['status' => 'paid']);
-        }
-    }
-
-    protected function applyAllocation(InvestmentPayout $payout, Member $member, string $kind, mixed $item): void
-    {
-        $cash = FinanceAccount::where('code', '1000')->first();
-
-        switch ($kind) {
-            case 'cash':
-                if ((float) $item > 0 && $payout->investment_id) {
-                    InvestmentReturn::create([
-                        'investment_id' => $payout->investment_id,
-                        'amount' => (float) $item,
-                        'paid_at' => now()->toDateString(),
-                        'notes' => 'Matured payout cash '.$payout->verify_code,
-                        'paid_by' => auth()->id(),
-                    ]);
-                }
-                break;
-            case 'swf':
-                if ((float) $item > 0) {
-                    SwfEntry::create([
-                        'member_id' => $member->id,
-                        'receipt_no' => 'SWF-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                        'type' => 'contribution',
-                        'amount' => (float) $item,
-                        'method' => 'bank',
-                        'transacted_at' => now()->toDateString(),
-                        'reason' => 'Member allocation '.$payout->verify_code,
-                        'received_by' => auth()->id(),
-                    ]);
-                }
-                break;
-            case 'loan':
-                $this->applyLoan($member, (float) $item, 'Member allocation (rejesho) '.$payout->verify_code);
-                break;
-            case 'shares':
-                if ((float) $item > 0 && $cash) {
-                    $tx = \App\Models\FinanceTransaction::create([
-                        'reference' => FinancePosting::reference('FT'),
-                        'type' => 'income',
-                        'category' => 'other',
-                        'finance_account_id' => $cash->id,
-                        'member_id' => $member->id,
-                        'amount' => (float) $item,
-                        'transacted_at' => now()->toDateString(),
-                        'description' => 'Hisa za duka '.$payout->verify_code,
-                        'created_by' => auth()->id(),
-                    ]);
-                    FinancePosting::postTransaction($tx->fresh());
-                }
-                break;
-            case 'reinvest':
-                if ((float) $item > 0) {
-                    $years = in_array($payout->allocation['reinvest_term'] ?? null, ['2', '4', '6'], true)
-                        ? (int) $payout->allocation['reinvest_term'] : 2;
-                    $rate = (float) (\App\Models\Setting::get('default_investment_return', '0'));
-                    Investment::create([
-                        'member_id' => $member->id,
-                        'investment_no' => 'INV-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                        'amount' => (float) $item,
-                        'expected_return_rate' => $rate,
-                        'expected_return' => round((float) $item * $rate / 100, 2),
-                        'start_date' => now()->toDateString(),
-                        'maturity_date' => now()->addYears($years)->toDateString(),
-                        'status' => 'active',
-                        'plan' => "Reinvest {$years}-year FIA",
-                        'notes' => 'From matured payout '.$payout->verify_code,
-                        'created_by' => auth()->id(),
-                    ]);
-                }
-                break;
-            case 'savings':
-                if ((float) $item > 0) {
-                    \App\Models\Deposit::create([
-                        'member_id' => $member->id,
-                        'receipt_no' => 'DP-'.now()->format('YmdHis').'-'.random_int(100, 999),
-                        'type' => 'deposit',
-                        'amount' => (float) $item,
-                        'method' => 'bank',
-                        'transacted_at' => now()->toDateString(),
-                        'notes' => 'Akiba '.strtoupper($payout->allocation['savings_type'] ?? '').' from payout '.$payout->verify_code,
-                        'received_by' => auth()->id(),
-                    ]);
-                }
-                break;
         }
     }
 
@@ -456,12 +348,14 @@ class MaturedPayoutController extends Controller
 
     public function sendSms(InvestmentPayout $payout)
     {
+        abort_unless($payout->kind === 'coupon', 404);
         $ok = $this->sendOne($payout);
 
         return back()->with($ok ? 'status' : 'import_failed', $ok
             ? 'SMS sent to '.$payout->phone.'.'
             : ['SMS to '.$payout->phone.' failed — check Communication Settings.']);
     }
+
     public function sendBulk(Request $request)
     {
         $data = $request->validate([
@@ -470,14 +364,14 @@ class MaturedPayoutController extends Controller
         ]);
         $template = $data['message'] ?? null;
 
-        $query = InvestmentPayout::with('member')->where('kind', 'matured')->where('status', 'pending')->where('phone', '!=', '');
+        $query = InvestmentPayout::with('member')->where('kind', 'coupon')->where('status', 'pending')->where('phone', '!=', '');
         if (! $request->boolean('resend')) {
             $query->whereNull('sms_sent_at');
         }
         $payouts = $query->get();
 
         if ($payouts->isEmpty()) {
-            return back()->with('status', 'No pending payouts waiting for SMS.');
+            return back()->with('status', 'No pending coupon payments waiting for SMS.');
         }
 
         // One NextSMS v2 multi request when possible, else per-recipient singles.
@@ -529,22 +423,16 @@ class MaturedPayoutController extends Controller
                 continue;
             }
 
+            if ($payout->kind !== 'coupon') {
+                continue;
+            }
+
             if ($payout->status === 'paid') {
                 $skipped[] = $payout->verify_code;
                 continue;
             }
 
-            DB::transaction(function () use ($payout) {
-                $investment = $payout->investment;
-                $payout->delete();
-
-                // Clean up investments auto-created by the import when nothing else uses them.
-                if ($investment && $investment->plan === 'Payout import'
-                    && $investment->payouts()->count() === 0
-                    && $investment->returns()->count() === 0) {
-                    $investment->delete();
-                }
-            });
+            $payout->delete();
             $deleted++;
         }
 

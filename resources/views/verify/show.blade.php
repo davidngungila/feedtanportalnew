@@ -134,7 +134,7 @@
             <div style="max-width:1080px;margin:0 auto">
                 <div class="view-head">
                     <div>
-                        <h2>Uthibitisho wa Malipo</h2>
+                        <h2>{{ ($payout->kind ?? 'matured') === 'coupon' ? 'Uthibitisho wa Malipo ya Coupon' : 'Uthibitisho wa Malipo' }}</h2>
                         <p class="sub">Habari {{ $payout->member->name ?? 'mwanachama' }} — thibitisha taarifa zako (ref {{ $payout->verify_code }}).</p>
                     </div>
                 </div>

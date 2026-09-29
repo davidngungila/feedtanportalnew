@@ -13,7 +13,7 @@ class InvestmentPayout extends Model
     public const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
     protected $fillable = [
-        'investment_id', 'member_id', 'phone', 'amount', 'loan_installment',
+        'investment_id', 'kind', 'member_id', 'phone', 'amount', 'loan_installment',
         'swf_deduction', 'fines_deduction', 'tshirt_deduction', 'capital_cmg',
         'net_cash', 'verify_code', 'status', 'decision', 'decision_notes',
         'allocation', 'sms_sent_at', 'verified_at', 'paid_at', 'notes', 'created_by',
