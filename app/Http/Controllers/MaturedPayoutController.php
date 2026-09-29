@@ -81,7 +81,14 @@ class MaturedPayoutController extends Controller
         }
 
         $import = new PayoutSheetImport;
-        Excel::import($import, $path);
+        // getRealPath() (e.g. /tmp/phpXXXX) has no extension, so pass an
+        // explicit reader type — otherwise FileTypeDetector throws
+        // NoTypeDetectedException on xlsx/xls uploads.
+        $readerType = match ($ext) {
+            'xls' => \Maatwebsite\Excel\Excel::XLS,
+            default => \Maatwebsite\Excel\Excel::XLSX,
+        };
+        Excel::import($import, $path, null, $readerType);
 
         return $import->rows;
     }
