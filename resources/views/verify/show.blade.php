@@ -303,7 +303,6 @@
         </section>
     @endif
 
-    <div class="note"><i class="fa-solid fa-shield-halved"></i><span>Kiungo hiki ni cha kwako peke yako — usishiriki na mtu mwingine. Ukiona kosa lolote kwenye taarifa, andika maelezo hapo chini kabla ya kuthibitisha.</span></div>
     <div class="foot"><i class="fa-solid fa-lock"></i>FeedTan CMG · Let's Grow Together</div>
 </div>
 
