@@ -658,8 +658,20 @@
                         <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </button>
                     <div class="sb-drop-menu">
+                        @php
+                            $joinIcons = [
+                                1 => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>',
+                                2 => '<rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path>',
+                                3 => '<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>',
+                                4 => '<rect x="8" y="2" width="8" height="4" rx="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path>',
+                            ];
+                            $joinActiveStep = null;
+                            if ($routeName === 'join.step') {
+                                try { $joinActiveStep = did((string) request()->route('n')); } catch (\Throwable $e) { $joinActiveStep = null; }
+                            }
+                        @endphp
                         @foreach([1 => 'Personal details', 2 => 'Contact', 3 => 'Membership', 4 => 'Review & submit'] as $n => $label)
-                        <a href="{{ $n <= $joinStep ? route('join.step', $n) : '#' }}" class="sb-drop-sub {{ request()->routeIs('join.step') && (int) request()->route('n') === $n ? 'active' : '' }}" @if($n > $joinStep) onclick="return false" style="opacity:.5;" @endif><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if($n < $joinStep)<polyline points="20 6 9 17 4 12"></polyline>@else<circle cx="12" cy="12" r="10"></circle>@endif</svg>{{ $n < $joinStep ? '✓ ' : '' }}{{ $label }}</a>
+                        <a href="{{ $n <= $joinStep ? route('join.step', eid($n)) : '#' }}" class="sb-drop-sub {{ $joinActiveStep === $n ? 'active' : '' }}" @if($n > $joinStep) onclick="return false" style="opacity:.5;" @endif><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $joinIcons[$n] !!}</svg>{{ $n < $joinStep ? '✓ ' : '' }}{{ $label }}</a>
                         @endforeach
                         <a href="{{ route('join.status') }}" class="sb-drop-sub {{ $routeName === 'join.status' ? 'active' : '' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Application status</a>
                     </div>

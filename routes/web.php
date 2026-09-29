@@ -61,11 +61,11 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    // Member onboarding: stepped registration for new accounts.
+    // Member onboarding: stepped registration for new accounts (step key is encrypted).
     Route::prefix('join')->name('join.')->group(function () {
         Route::get('/', [JoinController::class, 'index'])->name('index');
-        Route::get('/step/{n}', [JoinController::class, 'step'])->name('step')->where('n', '[1-4]');
-        Route::post('/step/{n}', [JoinController::class, 'saveStep'])->name('save')->where('n', '[1-4]');
+        Route::get('/step/{n}', [JoinController::class, 'step'])->name('step')->where('n', '[A-Za-z0-9\-_]+');
+        Route::post('/step/{n}', [JoinController::class, 'saveStep'])->name('save')->where('n', '[A-Za-z0-9\-_]+');
         Route::post('/submit', [JoinController::class, 'submit'])->name('submit');
         Route::post('/restart', [JoinController::class, 'restart'])->name('restart');
         Route::get('/status', [JoinController::class, 'status'])->name('status');

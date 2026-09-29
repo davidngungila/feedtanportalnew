@@ -40,7 +40,7 @@ class MemberOnboardingTest extends TestCase
         $this->assertTrue($user->hasRole('applicant'));
         $this->assertTrue(is_applicant_incomplete($user->fresh()));
 
-        $this->actingAs($user)->get(route('join.index'))->assertRedirect(route('join.step', 1));
+        $this->actingAs($user)->get(route('join.index'))->assertOk()->assertSee('How it works');
         $this->assertNotNull(MemberApplication::where('user_id', $user->id)->first());
     }
 
@@ -49,10 +49,12 @@ class MemberOnboardingTest extends TestCase
         $user = User::create(['name' => 'A', 'email' => 'a@test.local', 'password' => 'secret123', 'role' => 'applicant']);
         $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
 
-        $this->actingAs($user)->post(route('join.save', 1), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect(route('join.step', 2));
-        $this->actingAs($user)->post(route('join.save', 2), ['address' => 'Mwanza'])->assertRedirect(route('join.step', 3));
-        $this->actingAs($user)->post(route('join.save', 3), [])->assertRedirect(route('join.step', 4));
-        $this->actingAs($user)->get(route('join.step', 4))->assertOk();
+        $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), [])->assertRedirect()->headers->get('Location'))));
+        $this->actingAs($user)->get(route('join.step', eid(4)))->assertOk();
+        // Tampered step keys are rejected.
+        $this->actingAs($user)->get(route('join.step', 'NOTASTEP'))->assertNotFound();
         $this->actingAs($user)->post(route('join.submit'), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect(route('join.status'));
 
         $app = MemberApplication::where('user_id', $user->id)->first();

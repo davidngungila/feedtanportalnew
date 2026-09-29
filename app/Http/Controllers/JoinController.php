@@ -51,29 +51,38 @@ class JoinController extends Controller
     {
         $app = $this->ownApplication();
 
-        if (! $app || $app->status === 'draft') {
-            $app = $this->draft();
-
-            return redirect()->route('join.step', $app->current_step);
-        }
-
-        if ($app->status === 'pending' || $app->status === 'approved' || $app->status === 'rejected') {
+        if ($app && in_array($app->status, ['pending', 'approved', 'rejected'], true)) {
             return redirect()->route('join.status');
         }
 
-        return redirect()->route('join.step', $app->current_step);
+        $app = $this->draft();
+
+        return view('join.start', ['app' => $app, 'steps' => self::STEPS]);
     }
 
-    public function step(int $n)
+    /** Step keys travel encrypted (plain numbers still accepted for old links). */
+    protected function resolveStep(mixed $n): int
     {
+        try {
+            $n = did((string) $n);
+        } catch (\Throwable) {
+            abort(404);
+        }
         abort_unless(isset(self::STEPS[$n]), 404);
+
+        return $n;
+    }
+
+    public function step(string $n)
+    {
+        $n = $this->resolveStep($n);
         $app = $this->draft();
 
         if ($app->status !== 'draft') {
             return redirect()->route('join.status');
         }
         if ($n > $app->current_step) {
-            return redirect()->route('join.step', $app->current_step);
+            return redirect()->route('join.step', eid($app->current_step));
         }
 
         $types = MemberType::where('status', 'active')->orderBy('name')->get();
@@ -82,9 +91,9 @@ class JoinController extends Controller
         return view('join.step', ['app' => $app, 'step' => $n, 'steps' => self::STEPS, 'types' => $types, 'groups' => $groups]);
     }
 
-    public function saveStep(Request $request, int $n)
+    public function saveStep(Request $request, string $n)
     {
-        abort_unless(isset(self::STEPS[$n]), 404);
+        $n = $this->resolveStep($n);
         $app = $this->draft();
         abort_unless($app->status === 'draft', 403);
 
@@ -107,7 +116,7 @@ class JoinController extends Controller
 
         $app->update([...$data, 'current_step' => max($app->current_step, min($n + 1, 4))]);
 
-        return redirect()->route('join.step', min($n + 1, 4))->with('status', 'Step '.$n.' saved.');
+        return redirect()->route('join.step', eid(min($n + 1, 4)))->with('status', 'Step '.$n.' saved.');
     }
 
     public function submit(Request $request)
@@ -141,6 +150,6 @@ class JoinController extends Controller
 
         $app->update(['status' => 'draft', 'current_step' => 1]);
 
-        return redirect()->route('join.step', 1)->with('status', 'Let’s update your details and send again.');
+        return redirect()->route('join.step', eid(1))->with('status', 'Let’s update your details and send again.');
     }
 }
