@@ -6,6 +6,10 @@
         <div class="view-actions"><span class="tag tag-gold">Step {{ $step }} of 7</span><a href="{{ route('join.status') }}" class="btn btn-ghost">Application status</a></div>
     </div>
 
+    @if($locked)
+    <div class="receipt" style="margin-bottom:20px;"><div class="receipt-row"><span>Application {{ ucfirst($app->status) }} — read-only, nothing can be changed here</span><b><a href="{{ route('join.status') }}" style="color:var(--terracotta-600);">Status →</a></b></div></div>
+    @endif
+
     <div class="settings-panel">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
             <h3 style="margin:0;">
@@ -37,6 +41,7 @@
         @if($step === 1)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Tell us who you are. Your name must match your national ID — the office verifies this before approval. Your phone receives SMS notifications about approvals, loans, repayments and payouts.</p>
         <form method="POST" action="{{ route('join.save', eid(1)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div class="form-row-3">
                 <div class="field"><label>First name *</label><input name="first_name" value="{{ old('first_name', $app->first_name) }}" placeholder="As shown on your national ID" required></div>
                 <div class="field"><label>Second name</label><input name="middle_name" value="{{ old('middle_name', $app->middle_name) }}" placeholder="Middle name (if any)"></div>
@@ -53,6 +58,7 @@
             </div>
                 <div class="field"><label>Passport-size picture (jpg/png — resized to 500px automatically)</label><input type="file" name="passport_picture" accept=".jpg,.jpeg,.png">@if(! empty($app->attachments['passport']))<div style="display:flex;align-items:center;gap:12px;margin-top:10px;"><img src="{{ Storage::disk('public')->url($app->attachments['passport']) }}" alt="Passport preview" style="width:96px;height:96px;border-radius:12px;object-fit:cover;border:1.5px solid var(--line);box-shadow:var(--shadow-sm);"><div class="cell-sub">Preview ✓ This photo becomes<br>your profile picture.<br><a href="{{ Storage::disk('public')->url($app->attachments['passport']) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">view full</a> · re-upload to replace</div></div>@endif</div>
             <button class="btn btn-primary" type="submit">Save &amp; continue →</button>
+        </fieldset>
         </form>
         <script>
         function showAge(){
@@ -79,6 +85,7 @@
         @if($step === 2)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Where do you live and work? Approval decisions, verification codes and monthly statements go to these contacts. Attach a current passport-size picture for the group documents.</p>
         <form method="POST" action="{{ route('join.save', eid(2)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div class="form-row">
                 <div class="field"><label>Email address</label><input type="email" name="email" value="{{ old('email', $app->email) }}" placeholder="you@example.com"></div>
                 <div class="field"><label>Current address</label><input name="address" value="{{ old('address', $app->address) }}" placeholder="Street, ward, district"></div>
@@ -88,6 +95,7 @@
                 <div class="field"><label>Employer / self employment</label><input name="employer" value="{{ old('employer', $app->employer) }}" placeholder="e.g. Self, ACME Ltd"></div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(1)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
+        </fieldset>
         </form>
         <div class="card-grid" style="margin-top:22px;">
             <div class="mini-card"><div class="mc-top"><span class="mc-name">Already given</span></div><div class="mc-label">{{ $app->name ?: '—' }} · {{ $app->phone ?: '—' }} · ID {{ $app->national_id ?: '—' }}</div></div>
@@ -99,22 +107,26 @@
         @if($step === 3)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Where do your payments come from? Give the bank account you pay from so the office can match your contributions.</p>
         <form method="POST" action="{{ route('join.save', eid(3)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div class="form-row">
                 <div class="field"><label>Bank and branch name</label><input name="bank_name" value="{{ old('bank_name', $app->bank_name) }}" placeholder="e.g. CRDB Mwanza"></div>
                 <div class="field"><label>Bank account number</label><input name="bank_account" value="{{ old('bank_account', $app->bank_account) }}" placeholder="Account number"></div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(2)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
+        </fieldset>
         </form>
         @endif
 
         @if($step === 4)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Choose the membership type that fits you and tell us who introduced you. Names and details of beneficiaries and your savings goal come on the next pages.</p>
         <form method="POST" action="{{ route('join.save', eid(4)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div class="form-row">
                 <div class="field"><label>Type of membership applied</label><select name="member_type_id"><option value="">— Select —</option>@foreach($types as $t)<option value="{{ $t->id }}" {{ (string)old('member_type_id', $app->member_type_id) === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>@endforeach</select></div>
                 <div class="field"><label>Who introduced / guarantees you?</label><input name="referrer" value="{{ old('referrer', $app->referrer) }}" placeholder="Name of person, or how you heard of FeedTan"></div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(3)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
+        </fieldset>
         </form>
         @if($types->isNotEmpty() || $groups->isNotEmpty())
         <h3 style="margin:24px 0 12px;">Available options in full</h3>
@@ -132,6 +144,7 @@
         @if($step === 5)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Who benefits if anything happens to you. Name each beneficiary with their relationship, % allocation (must add up to 100%), bank details and contact.</p>
         <form method="POST" action="{{ route('join.save', eid(5)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div id="benList">
                 @php $bens = old('beneficiaries', $app->beneficiaries ?? [['name' => '', 'relationship' => '', 'allocation' => '', 'bank' => '', 'contact' => '']]); @endphp
                 @foreach($bens as $i => $b)
@@ -148,6 +161,7 @@
             <button type="button" class="btn btn-ghost btn-sm" onclick="addBenRow()">+ Add beneficiary</button>
 
             <div style="display:flex;gap:10px;margin-top:18px;"><a href="{{ route('join.step', eid(4)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
+        </fieldset>
         </form>
         <script>
         let benIndex = {{ count($bens) }};
@@ -182,6 +196,7 @@
         @if($step === 6)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">What are you saving for? Set a specific goal with a target amount and timeframe — the office can advise a plan that fits.</p>
         <form method="POST" action="{{ route('join.save', eid(6)) }}" enctype="multipart/form-data">@csrf
+        <fieldset @if($locked) disabled @endif style="border:none;padding:0;margin:0;min-width:0;">
             <div class="field"><label>Specific goal</label><input name="savings_goal" value="{{ old('savings_goal', $app->savings_goal) }}" placeholder="What is the money for?"></div>
             <div class="form-row-3">
                 <div class="field"><label>Amount (TZS)</label><input type="number" name="goal_amount" value="{{ old('goal_amount', $app->goal_amount) }}" min="0" step="1000" placeholder="Figures only"></div>
@@ -189,6 +204,7 @@
                 <div class="field"><label>Start saving</label><input type="date" name="goal_start" value="{{ old('goal_start', $app->goal_start?->format('Y-m-d')) }}"></div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(5)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; review →</button></div>
+        </fieldset>
         </form>
         @endif
 

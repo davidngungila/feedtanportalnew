@@ -102,17 +102,16 @@ class JoinController extends Controller
         $n = $this->resolveStep($n);
         $app = $this->draft();
 
-        if ($app->status !== 'draft') {
-            return redirect()->route('join.status');
-        }
         if ($n > $app->current_step) {
-            return redirect()->route('join.step', eid($app->current_step));
+            return $app->status === 'draft'
+                ? redirect()->route('join.step', eid($app->current_step))
+                : redirect()->route('join.status');
         }
 
         $types = MemberType::where('status', 'active')->orderBy('name')->get();
         $groups = MemberGroup::where('status', 'active')->orderBy('name')->get();
 
-        return view('join.step', ['app' => $app, 'step' => $n, 'steps' => self::STEPS, 'types' => $types, 'groups' => $groups]);
+        return view('join.step', ['app' => $app, 'step' => $n, 'steps' => self::STEPS, 'types' => $types, 'groups' => $groups, 'locked' => $app->status !== 'draft']);
     }
 
     protected function storeUpload(?object $file, string $folder): ?string

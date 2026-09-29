@@ -78,6 +78,10 @@ class MemberOnboardingTest extends TestCase
         $this->assertEquals('pending', $app->status);
         $this->assertEquals('CRDB', $app->bank_name);
         $this->assertCount(2, $app->beneficiaries);
+
+        // Submitted pages stay viewable but locked: banner, disabled fields, no saving.
+        $this->actingAs($user)->get(route('join.step', eid(1)))->assertOk()->assertSee('read-only');
+        $this->actingAs($user)->post(route('join.save', eid(1)), ['first_name' => 'X', 'surname' => 'Y', 'phone' => '0700'])->assertForbidden();
     }
 
     public function test_age_is_calculated_from_date_of_birth(): void
