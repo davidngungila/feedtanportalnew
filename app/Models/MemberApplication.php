@@ -10,7 +10,7 @@ class MemberApplication extends Model
 {
     use EncryptsRouteKey;
     protected $fillable = [
-        'user_id', 'current_step', 'name', 'phone', 'email', 'national_id', 'address',
+        'user_id', 'current_step', 'name', 'first_name', 'middle_name', 'surname', 'phone', 'email', 'national_id', 'address',
         'sex', 'marital_status', 'dob', 'job', 'employer', 'statement_channel',
         'bank_name', 'bank_account',
         'member_type_id', 'member_group_id', 'status', 'notes', 'reviewed_by',

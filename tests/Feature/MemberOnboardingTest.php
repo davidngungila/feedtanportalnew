@@ -49,7 +49,7 @@ class MemberOnboardingTest extends TestCase
         $user = User::create(['name' => 'A', 'email' => 'a@test.local', 'password' => 'secret123', 'role' => 'applicant']);
         $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
 
-        $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['name' => 'A Person', 'phone' => '0711000002', 'sex' => 'male'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['first_name' => 'Amina', 'middle_name' => 'Said', 'surname' => 'Juma', 'phone' => '0711000002', 'sex' => 'female'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza', 'job' => 'Trader'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), ['bank_name' => 'CRDB', 'bank_account' => '0112233'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(5, did(basename($this->actingAs($user)->post(route('join.save', eid(4)), [
@@ -66,7 +66,7 @@ class MemberOnboardingTest extends TestCase
         $this->actingAs($user)->post(route('join.save', eid(4)), [
             'beneficiaries' => [['name' => 'Kid One', 'allocation' => 30]],
         ])->assertSessionHasErrors('beneficiaries');
-        $this->actingAs($user)->post(route('join.submit'), ['name' => 'A Person', 'phone' => '0711000002'])->assertRedirect(route('join.status'));
+        $this->actingAs($user)->post(route('join.submit'))->assertRedirect(route('join.status'));
         $this->actingAs($user)->get(route('join.status'))->assertOk()->assertSee('office');
 
         $app = MemberApplication::where('user_id', $user->id)->first();

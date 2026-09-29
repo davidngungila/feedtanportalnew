@@ -22,7 +22,9 @@
     <div class="panel-grid">
         <div class="panel"><div class="panel-head"><h3>Identity &amp; contact</h3></div>
             <div class="panel-body"><div class="detail-grid">
-                <div class="detail-item"><div class="dk">Name</div><div class="dv">{{ $application->name }}</div></div>
+                <div class="detail-item"><div class="dk">First name</div><div class="dv">{{ $application->first_name ?? $application->name }}</div></div>
+                <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $application->middle_name ?? '—' }}</div></div>
+                <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $application->surname ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $application->sex ? ucfirst($application->sex) : '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $application->dob?->format('d M Y') ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $application->marital_status ? ucfirst($application->marital_status) : '—' }}</div></div>

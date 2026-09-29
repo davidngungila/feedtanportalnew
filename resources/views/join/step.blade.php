@@ -31,7 +31,11 @@
         @if($step === 1)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Tell us who you are. Your name must match your national ID — the office verifies this before approval. Your phone receives SMS notifications about approvals, loans, repayments and payouts.</p>
         <form method="POST" action="{{ route('join.save', eid(1)) }}" enctype="multipart/form-data">@csrf
-            <div class="field"><label>Full name *</label><input name="name" value="{{ old('name', $app->name) }}" placeholder="As shown on your national ID" required></div>
+            <div class="form-row-3">
+                <div class="field"><label>First name *</label><input name="first_name" value="{{ old('first_name', $app->first_name) }}" placeholder="As shown on your national ID" required></div>
+                <div class="field"><label>Second name</label><input name="middle_name" value="{{ old('middle_name', $app->middle_name) }}" placeholder="Middle name (if any)"></div>
+                <div class="field"><label>Surname *</label><input name="surname" value="{{ old('surname', $app->surname) }}" placeholder="Family name" required></div>
+            </div>
             <div class="form-row-3">
                 <div class="field"><label>Sex</label><select name="sex"><option value="">— Select —</option><option value="male" {{ old('sex', $app->sex) === 'male' ? 'selected' : '' }}>Male</option><option value="female" {{ old('sex', $app->sex) === 'female' ? 'selected' : '' }}>Female</option></select></div>
                 <div class="field"><label>Date of birth</label><input type="date" name="dob" value="{{ old('dob', $app->dob?->format('Y-m-d')) }}" max="{{ now()->toDateString() }}"></div>
@@ -168,7 +172,9 @@
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1100px;">Check everything once more. You can jump back to any step to fix it — nothing is sent until you press submit.</p>
         <h3 style="margin:0 0 12px;">Identity &amp; contact <a href="{{ route('join.step', eid(1)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">
-            <div class="detail-item"><div class="dk">Name</div><div class="dv">{{ $app->name }}</div></div>
+            <div class="detail-item"><div class="dk">First name</div><div class="dv">{{ $app->first_name }}</div></div>
+            <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $app->middle_name ?? '—' }}</div></div>
+            <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $app->surname }}</div></div>
             <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $app->sex ? ucfirst($app->sex) : '—' }}</div></div>
             <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $app->dob?->format('d M Y') ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $app->marital_status ? ucfirst($app->marital_status) : '—' }}</div></div>

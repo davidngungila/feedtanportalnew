@@ -47,8 +47,21 @@
         .error{background:var(--danger-100);color:var(--danger);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;margin-bottom:16px;}
         .foot{margin-top:20px;text-align:center;font-size:13px;color:var(--ink-soft);}
         .foot a{color:var(--terracotta-600);font-weight:700;}
-        .steps{display:flex;gap:6px;justify-content:center;margin-bottom:6px;}
-        .steps span{font-size:11px;font-weight:700;background:var(--sand-100);border:1px solid var(--line);border-radius:20px;padding:4px 11px;color:var(--coffee-700);}
+        .steps{display:flex;gap:6px;justify-content:center;margin-bottom:6px;flex-wrap:wrap;}
+        .steps span{font-size:11px;font-weight:700;background:var(--sand-100);border:1px solid var(--line);border-radius:20px;padding:4px 11px;color:var(--coffee-700);white-space:nowrap;}
+        @media (max-width:520px){
+            body{padding:14px;}
+            .login-card{padding:28px 20px;border-radius:16px;}
+            h1{font-size:20px;margin:16px 0 5px;}
+            .sub{font-size:13px;margin-bottom:20px;}
+            .form-row{grid-template-columns:1fr;}
+            .brand-mark{width:38px;height:38px;}
+        }
+        @media (max-width:360px){
+            .login-card{padding:24px 16px;}
+            .field input{padding:11px 12px;font-size:14px;}
+            .btn{padding:12px 16px;font-size:14px;}
+        }
     </style>
 </head>
 <body>

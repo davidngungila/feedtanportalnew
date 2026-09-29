@@ -35,10 +35,14 @@ class JoinController extends Controller
         $app = $this->ownApplication();
 
         if (! $app || in_array($app->status, ['approved'], true)) {
+            [$first, $middle, $last] = self::splitName($user->name);
             $app = MemberApplication::create([
                 'user_id' => $user->id,
                 'current_step' => 1,
                 'name' => $user->name,
+                'first_name' => $first,
+                'middle_name' => $middle,
+                'surname' => $last,
                 'phone' => $user->phone ?? '',
                 'email' => $user->email,
                 'status' => 'draft',
@@ -62,6 +66,20 @@ class JoinController extends Controller
         $app = $this->draft();
 
         return view('join.start', ['app' => $app, 'steps' => self::STEPS]);
+    }
+
+    /** Split a full name into [first, middle, surname]. */
+    public static function splitName(?string $name): array
+    {
+        $parts = preg_split('/\s+/', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY);
+        if (! $parts) {
+            return [null, null, null];
+        }
+        if (count($parts) === 1) {
+            return [$parts[0], null, null];
+        }
+
+        return [$parts[0], implode(' ', array_slice($parts, 1, -1)) ?: null, end($parts)];
     }
 
     /** Step keys travel encrypted (plain numbers still accepted for old links). */
@@ -112,7 +130,9 @@ class JoinController extends Controller
 
         $data = match ($n) {
             1 => $request->validate([
-                'name' => ['required', 'string', 'max:255'],
+                'first_name' => ['required', 'string', 'max:120'],
+                'middle_name' => ['nullable', 'string', 'max:120'],
+                'surname' => ['required', 'string', 'max:120'],
                 'sex' => ['nullable', 'in:male,female'],
                 'dob' => ['nullable', 'date', 'before:today'],
                 'marital_status' => ['nullable', 'in:single,married,divorced,widowed'],
@@ -189,6 +209,11 @@ class JoinController extends Controller
             $update['attachments'] = $attachments;
         }
 
+        // Keep the full name in sync with its parts.
+        if ($n === 1) {
+            $update['name'] = trim(implode(' ', array_filter([$update['first_name'] ?? null, $update['middle_name'] ?? null, $update['surname'] ?? null])));
+        }
+
         $update['current_step'] = max($app->current_step, min($n + 1, self::MAX_STEP));
         $app->update($update);
 
@@ -200,12 +225,15 @@ class JoinController extends Controller
         $app = $this->draft();
         abort_unless($app->status === 'draft', 403);
 
-        $valid = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-        ]);
+        if (! $app->first_name || ! $app->surname || ! $app->phone) {
+            return redirect()->route('join.step', eid(1))->withErrors(['name' => 'Please complete your name and phone in step 1 first.']);
+        }
 
-        $app->update([...$valid, 'status' => 'pending', 'current_step' => self::MAX_STEP]);
+        $app->update([
+            'name' => trim(implode(' ', array_filter([$app->first_name, $app->middle_name, $app->surname]))),
+            'status' => 'pending',
+            'current_step' => self::MAX_STEP,
+        ]);
 
         return redirect()->route('join.status')->with('status', 'Application sent — we will notify you once reviewed.');
     }
