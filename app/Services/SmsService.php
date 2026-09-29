@@ -22,7 +22,7 @@ class SmsService
     public static function defaultTemplate(): string
     {
         return Setting::get('comm_payout_sms')
-            ?: 'Habari {name}, hongera! 🎉 Umepata gawio la TZS {amount} kwa ajili ya uwekezaji wako wa FIA. Thibitisha malipo yako hapa: {link}. Endelea kuwekeza na kupata gawio zaidi.';
+            ?: 'Habari {name}, hongera! Umepata gawio la TZS {amount} kwa ajili ya uwekezaji wako wa FIA. Thibitisha malipo yako hapa: {link}. Endelea kuwekeza na kupata gawio zaidi.';
     }
 
     public static function defaultCouponTemplate(): string
