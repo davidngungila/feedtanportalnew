@@ -86,7 +86,6 @@ class MemberApplicationController extends Controller
             'created_by' => auth()->id(),
         ]);
         $extra = array_filter([
-            $memberApplication->biography ? 'Bio: '.$memberApplication->biography : null,
             $memberApplication->referrer ? 'Introduced by: '.$memberApplication->referrer : null,
             $memberApplication->bank_name ? 'Bank: '.$memberApplication->bank_name.' '.($memberApplication->bank_account ?? '') : null,
         ]);

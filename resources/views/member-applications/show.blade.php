@@ -26,7 +26,7 @@
                 <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $application->middle_name ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $application->surname ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $application->sex ? ucfirst($application->sex) : '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $application->dob?->format('d M Y') ?? '—' }}</div></div>
+                <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $application->dob?->format('d M Y') ?? '—' }}@if($application->age !== null) · {{ $application->age }} yrs @endif</div></div>
                 <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $application->marital_status ? ucfirst($application->marital_status) : '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Phone</div><div class="dv">{{ $application->phone }}</div></div>
                 <div class="detail-item"><div class="dk">NIDA number</div><div class="dv">{{ $application->national_id ?? '—' }}</div></div>
@@ -37,14 +37,12 @@
                 <div class="detail-item"><div class="dk">Statements via</div><div class="dv">{{ $application->statement_channel ? ucfirst($application->statement_channel) : '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $application->referrer ?? '—' }}</div></div>
             </div>
-            @if($application->biography)<div class="receipt"><div class="receipt-row"><span>Bibliography</span><b style="font-weight:600;">{{ $application->biography }}</b></div></div>@endif
             </div>
         </div>
         <div class="panel"><div class="panel-head"><h3>Bank &amp; payments</h3></div>
             <div class="panel-body"><div class="detail-grid">
                 <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $application->bank_name ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $application->bank_account ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Ordinary track</div><div class="dv">{{ $application->consider_ordinary ? 'Wants consideration' : '—' }}</div></div>
             </div>
             @if($application->notes)<div class="receipt"><div class="receipt-row"><span>Notes</span><b style="font-weight:600;">{{ $application->notes }}</b></div></div>@endif
             </div>
@@ -66,15 +64,10 @@
             <div class="panel-body"><div class="detail-grid">
                 <div class="detail-item"><div class="dk">Savings goal</div><div class="dv">{{ $application->savings_goal ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Target</div><div class="dv">{{ $application->goal_amount ? money($application->goal_amount).' / '.$application->goal_months.' mo from '.($application->goal_start?->format('d M Y') ?? '?') : '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Group</div><div class="dv">{{ $application->memberGroup->name ?? ($application->group_name ?: '—') }}</div></div>
-                <div class="detail-item"><div class="dk">Govt registered</div><div class="dv">{{ $application->group_name ? ($application->group_registered ? 'Yes' : 'No') : '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Leaders</div><div class="dv">{{ $application->group_leaders ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Group bank</div><div class="dv">{{ $application->group_bank_account ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Group contacts</div><div class="dv">{{ $application->group_contacts ?? '—' }}</div></div>
             </div>
             <div class="receipt">
                 @php $files = $application->attachments ?? []; @endphp
-                @foreach(['passport' => 'Passport picture', 'application_letter' => 'Application letter'] as $k => $label)
+                @foreach(['passport' => 'Passport picture'] as $k => $label)
                     @if(! empty($files[$k]))
                     <div class="receipt-row"><span>{{ $label }}</span><b><a href="{{ Storage::disk('public')->url($files[$k]) }}" target="_blank" style="color:var(--terracotta-600);">Open →</a></b></div>
                     @endif

@@ -342,21 +342,31 @@ class FinancePosting
 
     public static function reference(string $prefix): string
     {
-        return $prefix.'-'.now()->format('YmdHis').'-'.random_int(100, 999);
+        // Microseconds + 4-digit entropy: safe for tight bulk-import loops.
+        return $prefix.'-'.now()->format('YmdHisv').'-'.random_int(1000, 9999);
     }
 
     protected static function makeEntry(string $description, string $date, ?string $sourceType = null, mixed $sourceId = null, ?string $sourceTag = null): JournalEntry
     {
-        return JournalEntry::create([
-            'reference' => self::reference('JE'),
-            'entry_date' => $date,
-            'description' => $description,
-            'status' => 'posted',
-            'source_type' => $sourceType,
-            'source_id' => $sourceId,
-            'source_tag' => $sourceTag,
-            'created_by' => auth()->id(),
-        ]);
+        $last = null;
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            try {
+                return JournalEntry::create([
+                    'reference' => self::reference('JE'),
+                    'entry_date' => $date,
+                    'description' => $description,
+                    'status' => 'posted',
+                    'source_type' => $sourceType,
+                    'source_id' => $sourceId,
+                    'source_tag' => $sourceTag,
+                    'created_by' => auth()->id(),
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                $last = $e;
+            }
+        }
+
+        throw $last;
     }
 
     public static function postTransaction(\App\Models\FinanceTransaction $tx): JournalEntry

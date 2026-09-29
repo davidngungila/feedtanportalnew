@@ -33,6 +33,12 @@ class MemberApplication extends Model
         ];
     }
 
+    /** Full years of age from date of birth, null when unknown. */
+    public function getAgeAttribute(): ?int
+    {
+        return $this->dob ? (int) $this->dob->diffInYears(now()) : null;
+    }
+
     public function memberType(): BelongsTo
     {
         return $this->belongsTo(MemberType::class);

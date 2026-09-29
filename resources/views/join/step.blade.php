@@ -38,15 +38,31 @@
             </div>
             <div class="form-row-3">
                 <div class="field"><label>Sex</label><select name="sex"><option value="">— Select —</option><option value="male" {{ old('sex', $app->sex) === 'male' ? 'selected' : '' }}>Male</option><option value="female" {{ old('sex', $app->sex) === 'female' ? 'selected' : '' }}>Female</option></select></div>
-                <div class="field"><label>Date of birth</label><input type="date" name="dob" value="{{ old('dob', $app->dob?->format('Y-m-d')) }}" max="{{ now()->toDateString() }}"></div>
+                <div class="field"><label>Date of birth</label><input type="date" id="dobInput" name="dob" value="{{ old('dob', $app->dob?->format('Y-m-d')) }}" max="{{ now()->toDateString() }}" onchange="showAge()"><div class="cell-sub" id="ageHint" style="margin-top:6px;">@if($app->age !== null){{ $app->age }} years old @endif</div></div>
                 <div class="field"><label>Marital status</label><select name="marital_status"><option value="">— Select —</option>@foreach(['single' => 'Single', 'married' => 'Married', 'divorced' => 'Divorced', 'widowed' => 'Widowed'] as $v => $l)<option value="{{ $v }}" {{ old('marital_status', $app->marital_status) === $v ? 'selected' : '' }}>{{ $l }}</option>@endforeach</select></div>
             </div>
             <div class="form-row">
                 <div class="field"><label>Mobile number *</label><input name="phone" value="{{ old('phone', $app->phone) }}" placeholder="07…" required></div>
                 <div class="field"><label>NIDA ID number</label><input name="national_id" value="{{ old('national_id', $app->national_id) }}" placeholder="e.g. 19900101-00000-00001-01"></div>
             </div>
+            <div class="field"><label>Passport-size picture (jpg/png — resized to 500px automatically)</label><input type="file" name="passport_picture" accept=".jpg,.jpeg,.png">@if(! empty($app->attachments['passport']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ <a href="{{ Storage::disk('public')->url($app->attachments['passport']) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">view</a> · re-upload to replace</div>@endif</div>
             <button class="btn btn-primary" type="submit">Save &amp; continue →</button>
         </form>
+        <script>
+        function showAge(){
+            const el = document.getElementById('dobInput');
+            const hint = document.getElementById('ageHint');
+            if (! el || ! hint) return;
+            if (! el.value) { hint.textContent = ''; return; }
+            const dob = new Date(el.value + 'T00:00:00');
+            const now = new Date();
+            let age = now.getFullYear() - dob.getFullYear();
+            const hadBirthday = (now.getMonth() > dob.getMonth()) || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
+            if (! hadBirthday) age--;
+            hint.textContent = age >= 0 ? age + (age === 1 ? ' year old' : ' years old') : '';
+        }
+        document.addEventListener('DOMContentLoaded', showAge);
+        </script>
         <div class="card-grid" style="margin-top:22px;">
             <div class="mini-card"><div class="mc-top"><span class="mc-name">Why your name?</span></div><div class="mc-label">It appears on your member number, statements and payout verifications. It must match your ID or approval is delayed.</div></div>
             <div class="mini-card"><div class="mc-top"><span class="mc-name">Why your phone?</span></div><div class="mc-label">One-time codes, payout confirmations and office notices arrive by SMS on this number.</div></div>
@@ -57,15 +73,13 @@
         @if($step === 2)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Where do you live and work? Approval decisions, verification codes and monthly statements go to these contacts. Attach a current passport-size picture for the group documents.</p>
         <form method="POST" action="{{ route('join.save', eid(2)) }}" enctype="multipart/form-data">@csrf
-            <div class="form-row-3">
+            <div class="form-row">
                 <div class="field"><label>Email address</label><input type="email" name="email" value="{{ old('email', $app->email) }}" placeholder="you@example.com"></div>
                 <div class="field"><label>Current address</label><input name="address" value="{{ old('address', $app->address) }}" placeholder="Street, ward, district"></div>
-                <div class="field"><label>Monthly statement via</label><select name="statement_channel"><option value="">— Select —</option><option value="sms" {{ old('statement_channel', $app->statement_channel) === 'sms' ? 'selected' : '' }}>SMS</option><option value="email" {{ old('statement_channel', $app->statement_channel) === 'email' ? 'selected' : '' }}>Email</option><option value="both" {{ old('statement_channel', $app->statement_channel) === 'both' ? 'selected' : '' }}>Both</option></select></div>
             </div>
-            <div class="form-row-3">
+            <div class="form-row">
                 <div class="field"><label>Job / occupation</label><input name="job" value="{{ old('job', $app->job) }}" placeholder="e.g. Teacher, trader"></div>
                 <div class="field"><label>Employer / self employment</label><input name="employer" value="{{ old('employer', $app->employer) }}" placeholder="e.g. Self, ACME Ltd"></div>
-                <div class="field"><label>Passport-size picture (jpg/png)</label><input type="file" name="passport_picture" accept=".jpg,.jpeg,.png">@if(! empty($app->attachments['passport']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ <a href="{{ Storage::disk('public')->url($app->attachments['passport']) }}" target="_blank" style="color:var(--terracotta-600);font-weight:700;">view</a> · re-upload to replace</div>@endif</div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(1)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
         </form>
@@ -88,18 +102,12 @@
         @endif
 
         @if($step === 4)
-        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Who is joining, and who benefits. Choose your membership type, tell us who introduced you, write a short bibliography for the group documents, and name your beneficiaries with their % allocation (must add up to 100%). Groups fill the group section too.</p>
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Who is joining, and who benefits. Choose your membership type, tell us who introduced you, and name your beneficiaries with their % allocation (must add up to 100%).</p>
         <form method="POST" action="{{ route('join.save', eid(4)) }}" enctype="multipart/form-data">@csrf
-            <div class="form-row-3">
-                <div class="field"><label>Type of membership applied</label><select name="member_type_id"><option value="">— Select —</option>@foreach($types as $t)<option value="{{ $t->id }}" {{ (string)old('member_type_id', $app->member_type_id) === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>@endforeach</select></div>
-                <div class="field"><label>Group</label><select name="member_group_id"><option value="">— None (individual) —</option>@foreach($groups as $g)<option value="{{ $g->id }}" {{ (string)old('member_group_id', $app->member_group_id) === (string)$g->id ? 'selected' : '' }}>{{ $g->name }}</option>@endforeach</select></div>
-                <div class="field"><label>Consider me for ordinary membership</label><select name="consider_ordinary"><option value="">— Select —</option><option value="1" {{ old('consider_ordinary', $app->consider_ordinary) ? 'selected' : '' }}>Yes</option><option value="0" {{ old('consider_ordinary', $app->consider_ordinary) === false && old('consider_ordinary') !== null ? 'selected' : '' }}>No</option></select></div>
-            </div>
             <div class="form-row">
+                <div class="field"><label>Type of membership applied</label><select name="member_type_id"><option value="">— Select —</option>@foreach($types as $t)<option value="{{ $t->id }}" {{ (string)old('member_type_id', $app->member_type_id) === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>@endforeach</select></div>
                 <div class="field"><label>Who introduced / guarantees you?</label><input name="referrer" value="{{ old('referrer', $app->referrer) }}" placeholder="Name of person, or how you heard of FeedTan"></div>
-                <div class="field"><label>Membership application letter</label><input type="file" name="application_letter" accept=".jpg,.jpeg,.png,.pdf">@if(! empty($app->attachments['application_letter']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ · re-upload to replace</div>@endif</div>
             </div>
-            <div class="field"><label>Short bibliography (published in group documents — optional)</label><textarea name="biography" rows="3" placeholder="A few lines about yourself">{{ old('biography', $app->biography) }}</textarea></div>
 
             <h3 style="margin:22px 0 10px;">Beneficiaries <span class="cell-sub">(in case of unfortunate event of death)</span></h3>
             <div id="benList">
@@ -125,17 +133,6 @@
                 <div class="field"><label>Start saving</label><input type="date" name="goal_start" value="{{ old('goal_start', $app->goal_start?->format('Y-m-d')) }}"></div>
             </div>
 
-            <h3 style="margin:22px 0 10px;">Group applicants only</h3>
-            <div class="form-row">
-                <div class="field"><label>Name of the group</label><input name="group_name" value="{{ old('group_name', $app->group_name) }}"></div>
-                <div class="field"><label>Registered with government?</label><select name="group_registered"><option value="">— Select —</option><option value="1" {{ old('group_registered', $app->group_registered) ? 'selected' : '' }}>Yes</option><option value="0" {{ old('group_registered', $app->group_registered) === false && old('group_registered') !== null ? 'selected' : '' }}>No</option></select></div>
-            </div>
-            <div class="field"><label>Names of leaders</label><input name="group_leaders" value="{{ old('group_leaders', $app->group_leaders) }}"></div>
-            <div class="form-row">
-                <div class="field"><label>Group bank account</label><input name="group_bank_account" value="{{ old('group_bank_account', $app->group_bank_account) }}"></div>
-                <div class="field"><label>Group contacts (email, mobile, address)</label><input name="group_contacts" value="{{ old('group_contacts', $app->group_contacts) }}"></div>
-            </div>
-            <div class="field"><label>Notes</label><textarea name="notes" rows="2" placeholder="Anything else the office should know">{{ old('notes', $app->notes) }}</textarea></div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(3)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; review →</button></div>
         </form>
         <script>
@@ -176,7 +173,7 @@
             <div class="detail-item"><div class="dk">Second name</div><div class="dv">{{ $app->middle_name ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Surname</div><div class="dv">{{ $app->surname }}</div></div>
             <div class="detail-item"><div class="dk">Sex</div><div class="dv">{{ $app->sex ? ucfirst($app->sex) : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $app->dob?->format('d M Y') ?? '—' }}</div></div>
+            <div class="detail-item"><div class="dk">Date of birth</div><div class="dv">{{ $app->dob?->format('d M Y') ?? '—' }}@if($app->age !== null) · {{ $app->age }} yrs @endif</div></div>
             <div class="detail-item"><div class="dk">Marital status</div><div class="dv">{{ $app->marital_status ? ucfirst($app->marital_status) : '—' }}</div></div>
             <div class="detail-item"><div class="dk">Phone</div><div class="dv">{{ $app->phone }}</div></div>
             <div class="detail-item"><div class="dk">NIDA number</div><div class="dv">{{ $app->national_id ?? '—' }}</div></div>
@@ -195,9 +192,7 @@
         <h3 style="margin:0 0 12px;">Membership &amp; people <a href="{{ route('join.step', eid(4)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">
             <div class="detail-item"><div class="dk">Type applied</div><div class="dv">{{ $app->memberType->name ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Group</div><div class="dv">{{ $app->memberGroup->name ?? ($app->group_name ?: '—') }}</div></div>
-            <div class="detail-item"><div class="dk">Ordinary track</div><div class="dv">{{ $app->consider_ordinary ? 'Yes' : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Biography</div><div class="dv">{{ $app->biography ?? '—' }}</div></div>
+            <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
         </div>
         @if(! empty($app->beneficiaries))
         <h3 style="margin:0 0 12px;">Beneficiaries</h3>

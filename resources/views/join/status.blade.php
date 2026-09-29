@@ -42,8 +42,6 @@
                 <div class="detail-item"><div class="dk">Email</div><div class="dv">{{ $app->email ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Address</div><div class="dv">{{ $app->address ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Type</div><div class="dv">{{ $app->memberType->name ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Group</div><div class="dv">{{ $app->memberGroup->name ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Notes</div><div class="dv">{{ $app->notes ?? '—' }}</div></div>
             </div></div>
         </div>
     </div>

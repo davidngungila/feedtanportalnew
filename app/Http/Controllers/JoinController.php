@@ -122,6 +122,50 @@ class JoinController extends Controller
         return $file->store($folder, 'public');
     }
 
+    /**
+     * Store a photo normalized to JPEG with the longest side at 500px.
+     * Smaller images are kept as-is (never upscaled).
+     */
+    protected function storePhoto(?object $file, string $folder, int $maxSide = 500): ?string
+    {
+        if (! $file) {
+            return null;
+        }
+        $path = $file->store($folder, 'public');
+        $absolute = Storage::disk('public')->path($path);
+
+        try {
+            $info = @getimagesize($absolute);
+            if (! $info || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+                return $path;
+            }
+            [$width, $height] = [$info[0], $info[1]];
+            $longest = max($width, $height);
+            if ($longest <= $maxSide) {
+                return $path;
+            }
+            $src = $info[2] === IMAGETYPE_PNG ? @imagecreatefrompng($absolute) : @imagecreatefromjpeg($absolute);
+            if (! $src) {
+                return $path;
+            }
+            $scale = $maxSide / $longest;
+            $dst = imagecreatetruecolor((int) round($width * $scale), (int) round($height * $scale));
+            imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, imagesx($dst), imagesy($dst), $width, $height);
+            $target = preg_replace('/\.[^.]+$/', '.jpg', $path);
+            imagejpeg($dst, Storage::disk('public')->path($target), 85);
+            imagedestroy($src);
+            imagedestroy($dst);
+            if ($target !== $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            return $target;
+        } catch (\Throwable) {
+            return $path;
+        }
+    }
+
     public function saveStep(Request $request, string $n)
     {
         $n = $this->resolveStep($n);
@@ -138,14 +182,13 @@ class JoinController extends Controller
                 'marital_status' => ['nullable', 'in:single,married,divorced,widowed'],
                 'phone' => ['required', 'string', 'max:30'],
                 'national_id' => ['nullable', 'string', 'max:60'],
+                'passport_picture' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:5120'],
             ]),
             2 => $request->validate([
                 'email' => ['nullable', 'email'],
                 'address' => ['nullable', 'string', 'max:255'],
                 'job' => ['nullable', 'string', 'max:255'],
                 'employer' => ['nullable', 'string', 'max:255'],
-                'statement_channel' => ['nullable', 'in:sms,email,both'],
-                'passport_picture' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:4096'],
             ]),
             3 => $request->validate([
                 'bank_name' => ['nullable', 'string', 'max:255'],
@@ -153,15 +196,7 @@ class JoinController extends Controller
             ]),
             default => $request->validate([
                 'member_type_id' => ['nullable', 'exists:member_types,id'],
-                'member_group_id' => ['nullable', 'exists:member_groups,id'],
-                'biography' => ['nullable', 'string', 'max:2000'],
                 'referrer' => ['nullable', 'string', 'max:255'],
-                'consider_ordinary' => ['nullable', 'in:1'],
-                'group_name' => ['nullable', 'string', 'max:255'],
-                'group_registered' => ['nullable', 'in:1'],
-                'group_leaders' => ['nullable', 'string', 'max:500'],
-                'group_bank_account' => ['nullable', 'string', 'max:255'],
-                'group_contacts' => ['nullable', 'string', 'max:500'],
                 'savings_goal' => ['nullable', 'string', 'max:255'],
                 'goal_amount' => ['nullable', 'numeric', 'min:0'],
                 'goal_months' => ['nullable', 'integer', 'min:1', 'max:600'],
@@ -172,18 +207,13 @@ class JoinController extends Controller
                 'beneficiaries.*.allocation' => ['nullable', 'numeric', 'min:0', 'max:100'],
                 'beneficiaries.*.bank' => ['nullable', 'string', 'max:255'],
                 'beneficiaries.*.contact' => ['nullable', 'string', 'max:255'],
-                'notes' => ['nullable', 'string'],
-                'application_letter' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
         };
 
         $update = collect($data)->except([
             'passport_picture', 'application_letter',
             'beneficiaries',
-            'consider_ordinary', 'group_registered',
         ])->all();
-        $update['consider_ordinary'] = $request->boolean('consider_ordinary');
-        $update['group_registered'] = $request->boolean('group_registered');
 
         // Beneficiaries must allocate 100% when given.
         if ($n === 4 && ! empty($data['beneficiaries'])) {
@@ -197,12 +227,12 @@ class JoinController extends Controller
 
         // Attachments merge with previously uploaded files.
         $attachments = $app->attachments ?? [];
-        foreach (['passport_picture' => 'passport', 'application_letter' => 'application_letter'] as $field => $key) {
+        foreach (['passport_picture' => 'passport'] as $field => $key) {
             if ($request->hasFile($field)) {
                 if (! empty($attachments[$key]) && is_string($attachments[$key])) {
                     Storage::disk('public')->delete($attachments[$key]);
                 }
-                $attachments[$key] = $this->storeUpload($request->file($field), 'applications');
+                $attachments[$key] = $this->storePhoto($request->file($field), 'applications');
             }
         }
         if ($attachments) {

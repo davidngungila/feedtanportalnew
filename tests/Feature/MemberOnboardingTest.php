@@ -75,20 +75,36 @@ class MemberOnboardingTest extends TestCase
         $this->assertCount(2, $app->beneficiaries);
     }
 
-    public function test_step_uploads_are_stored(): void
+    public function test_age_is_calculated_from_date_of_birth(): void
     {
+        $user = User::create(['name' => 'G', 'email' => 'g@test.local', 'password' => 'secret123', 'role' => 'applicant']);
+        $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
+
+        $dob = now()->subYears(30)->toDateString();
+        $this->actingAs($user)->post(route('join.save', eid(1)), [
+            'first_name' => 'G', 'surname' => 'Person', 'phone' => '0711000030', 'dob' => $dob,
+        ])->assertRedirect();
+
+        $app = MemberApplication::where('user_id', $user->id)->first();
+        $this->assertEquals(30, $app->age);
+        $this->actingAs($user)->get(route('join.step', eid(1)))->assertOk()->assertSee('30 years old');
+    }
+
+    public function test_step_uploads_are_stored(): void    {
         \Illuminate\Support\Facades\Storage::fake('public');
         $user = User::create(['name' => 'U', 'email' => 'u@test.local', 'password' => 'secret123', 'role' => 'applicant']);
         $user->roles()->sync(Role::where('slug', 'applicant')->pluck('id'));
 
-        $this->actingAs($user)->post(route('join.save', eid(2)), [
-            'address' => 'Mwanza',
-            'passport_picture' => \Illuminate\Http\UploadedFile::fake()->image('passport.jpg'),
+        $this->actingAs($user)->post(route('join.save', eid(1)), [
+            'first_name' => 'U', 'surname' => 'Person', 'phone' => '0711000011',
+            'passport_picture' => \Illuminate\Http\UploadedFile::fake()->image('passport.jpg', 1200, 900),
         ])->assertRedirect();
 
         $app = MemberApplication::where('user_id', $user->id)->first();
         $this->assertNotEmpty($app->attachments['passport'] ?? null);
         \Illuminate\Support\Facades\Storage::disk('public')->assertExists($app->attachments['passport']);
+        $size = getimagesize(\Illuminate\Support\Facades\Storage::disk('public')->path($app->attachments['passport']));
+        $this->assertEquals(500, max($size[0], $size[1]));
     }
 
     public function test_status_page_renders_for_every_state(): void
@@ -127,20 +143,19 @@ class MemberOnboardingTest extends TestCase
         $app = MemberApplication::create([
             'current_step' => 5, 'name' => 'Full File', 'phone' => '0711000020',
             'email' => 'full@test.local', 'status' => 'pending',
-            'biography' => 'Trader from Mwanza', 'referrer' => 'Juma',
+            'referrer' => 'Juma',
             'bank_name' => 'CRDB', 'bank_account' => '0112233',
             'beneficiaries' => [['name' => 'Kid', 'relationship' => 'Child', 'allocation' => 100]],
-            'contributions' => ['entrance_fee' => true],
         ]);
 
         $this->actingAs($admin)->get(route('member-applications.show', $app))
-            ->assertOk()->assertSee('Trader from Mwanza')->assertSee('0112233')->assertSee('Kid');
+            ->assertOk()->assertSee('Juma')->assertSee('0112233')->assertSee('Kid');
 
         $this->actingAs($admin)->post(route('member-applications.approve', $app))->assertRedirect();
 
         $member = Member::where('email', 'full@test.local')->first();
         $this->assertNotNull($member);
-        $this->assertStringContainsString('Trader from Mwanza', $member->notes ?? '');
+        $this->assertStringContainsString('Juma', $member->notes ?? '');
     }
 
     public function test_portal_create_pages_render(): void
