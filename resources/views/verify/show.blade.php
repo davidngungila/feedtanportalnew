@@ -127,6 +127,7 @@
         .modal-box .big-ico{width:70px;height:70px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--acacia-100);color:var(--acacia-600);border:2px solid var(--acacia-500)}
         .modal-box h3{margin:0;font-size:19px}
         .modal-box p{font-size:13.5px;color:var(--coffee-700);line-height:1.6;margin:8px 0 0}
+        .modal-box.err .big-ico{background:var(--danger-100);color:var(--danger);border-color:var(--danger)}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         .anim{animation:fadeUp .4s ease}
         @media (max-width:520px){
@@ -152,11 +153,10 @@
             <div class="avatar">{{ strtoupper(substr($payout->member->name ?? 'F', 0, 1)) }}</div>
             <div>
                 <h1>Habari, {{ explode(' ', $payout->member->name ?? 'mwanachama')[0] }}</h1>
-                <p>{{ ($payout->kind ?? 'matured') === 'coupon' ? 'Uthibitisho wa malipo ya coupon' : 'Uthibitisho wa malipo ya uwekezaji' }} · Ref {{ $payout->verify_code }}</p>
+                <p>{{ ($payout->kind ?? 'matured') === 'coupon' ? 'Malipo ya Gawio' : 'Uthibitisho wa malipo ya uwekezaji' }} · Ref {{ $payout->verify_code }}</p>
             </div>
         </div>
         <div class="pills">
-            <span class="pill"><i class="fa-solid fa-hashtag"></i>{{ $payout->verify_code }}</span>
             <span class="pill status-{{ $payout->status }}"><i class="fa-solid fa-circle" style="font-size:7px"></i>{{ ucfirst($payout->status) }}</span>
         </div>
     </header>
@@ -261,9 +261,8 @@
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}" novalidate>
                     @csrf
                     <div id="allocStep">
-                        <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Jaza mgawanyo wako — sehemu zote kwa ukurasa mmoja</div>
                         <div class="chip-row">
-                            <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Weka yote taslimu</button>
+                            <button type="button" class="chip" id="fillCash"><i class="fa-solid fa-money-bill-wave"></i> Gawa salio lote</button>
                             <button type="button" class="chip" id="clearAll"><i class="fa-solid fa-eraser"></i> Futa</button>
                         </div>
                         <div class="alloc-grid">
@@ -281,7 +280,6 @@
                             <div class="r-ico"><i class="fa-solid fa-scale-balanced"></i></div>
                             <div><small>Imebaki kugawa</small><b id="allocLeft">TZS {{ number_format($payout->net_cash, 0) }}</b></div>
                         </div>
-                        <div class="mini-err" id="miniErr"></div>
                         <button type="button" class="btn" id="nextBtn"><span>Endelea — Hakiki</span><i class="fa-solid fa-arrow-right"></i></button>
                     </div>
                     <div id="previewStep" class="hidden-step">
@@ -305,6 +303,14 @@
         </section>
     @endif
 
+    <div class="modal-bg" id="errModal">
+        <div class="modal-box err">
+            <div class="big-ico"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>Pole!</h3>
+            <p id="errModalMsg"></p>
+            <button type="button" class="btn" id="errOkBtn" style="margin-top:18px"><span>Sawa, nirekebishe</span></button>
+        </div>
+    </div>
     <div class="foot"><i class="fa-solid fa-lock"></i>FeedTan CMG · Let's Grow Together</div>
 </div>
 
@@ -316,6 +322,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const close = () => sm.classList.remove('show');
         if (ok) ok.addEventListener('click', close);
         sm.addEventListener('click', e => { if (e.target === sm) close(); });
+    }
+    const em = document.getElementById('errModal');
+    if (em) {
+        const ok = document.getElementById('errOkBtn');
+        const close = () => em.classList.remove('show');
+        if (ok) ok.addEventListener('click', close);
+        em.addEventListener('click', e => { if (e.target === em) close(); });
     }
     const f = document.getElementById('verifyForm');
     if (!f) return;
@@ -332,12 +345,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const val = name => parseFloat((f.querySelector('[name="' + name + '"]') || {}).value) || 0;
     function sum(){ let s = 0; allocInputs.forEach(i => { s += parseFloat(i.value) || 0; }); return s; }
     function showErr(msg){
-        if (!miniErr) return;
-        miniErr.textContent = msg;
-        miniErr.style.display = 'block';
-        miniErr.scrollIntoView({behavior:'smooth', block:'center'});
+        if (errModalMsg) errModalMsg.textContent = msg;
+        if (miniErr) miniErr.classList.add('show');
     }
-    function hideErr(){ if (miniErr) miniErr.style.display = 'none'; }
+    function hideErr(){ if (miniErr) miniErr.classList.remove('show'); }
     function recalc(){
         if (!leftEl) return;
         const left = Math.round((net - sum()) * 100) / 100;
@@ -351,7 +362,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewTotal = document.getElementById('previewTotal');
     const previewNotesRow = document.getElementById('previewNotesRow');
     const previewNotes = document.getElementById('previewNotes');
-    const miniErr = document.getElementById('miniErr');
+    const miniErr = document.getElementById('errModal');
+    const errModalMsg = document.getElementById('errModalMsg');
     function checkRules(){
         let neg = false;
         allocInputs.forEach(i => { if (parseFloat(i.value) < 0) neg = true; });
@@ -401,7 +413,9 @@ document.addEventListener('DOMContentLoaded', function () {
         allocStep.scrollIntoView({behavior:'smooth', block:'start'});
     }
     if (fillBtn) fillBtn.addEventListener('click', function(){
-        allocInputs.forEach(i => { i.value = (i.name === 'alloc_cash') ? Math.round(net) : 0; });
+        const cash = f.querySelector('[name="alloc_cash"]');
+        const left = Math.round((net - sum()) * 100) / 100;
+        if (cash) cash.value = Math.max(0, Math.round(((parseFloat(cash.value) || 0) + left) * 100) / 100);
         hideErr();
         recalc();
     });
