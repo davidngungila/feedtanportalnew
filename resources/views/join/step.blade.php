@@ -31,8 +31,8 @@
         @if($step === 1)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Tell us who you are. Your name must match your national ID — the office verifies this before approval. Your phone receives SMS notifications about approvals, loans, repayments and payouts.</p>
         <form method="POST" action="{{ route('join.save', eid(1)) }}" enctype="multipart/form-data">@csrf
-            <div class="form-row-4">
-                <div class="field"><label>Full name *</label><input name="name" value="{{ old('name', $app->name) }}" placeholder="As shown on your national ID" required></div>
+            <div class="field"><label>Full name *</label><input name="name" value="{{ old('name', $app->name) }}" placeholder="As shown on your national ID" required></div>
+            <div class="form-row-3">
                 <div class="field"><label>Sex</label><select name="sex"><option value="">— Select —</option><option value="male" {{ old('sex', $app->sex) === 'male' ? 'selected' : '' }}>Male</option><option value="female" {{ old('sex', $app->sex) === 'female' ? 'selected' : '' }}>Female</option></select></div>
                 <div class="field"><label>Date of birth</label><input type="date" name="dob" value="{{ old('dob', $app->dob?->format('Y-m-d')) }}" max="{{ now()->toDateString() }}"></div>
                 <div class="field"><label>Marital status</label><select name="marital_status"><option value="">— Select —</option>@foreach(['single' => 'Single', 'married' => 'Married', 'divorced' => 'Divorced', 'widowed' => 'Widowed'] as $v => $l)<option value="{{ $v }}" {{ old('marital_status', $app->marital_status) === $v ? 'selected' : '' }}>{{ $l }}</option>@endforeach</select></div>
@@ -73,25 +73,11 @@
         @endif
 
         @if($step === 3)
-        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Show how you paid. Tick each contribution you made, write the payment reference numbers (Namba za Kumbukumbu), and attach the payment slips as evidence. Phase 2 of TShs 1,800,000 (12 shares) can be lumpsum or installment — attach the bank standing order if you pay in installments. Students attach the annual subscription slip.</p>
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Where do your payments come from? Give the bank account you pay from so the office can match your contributions.</p>
         <form method="POST" action="{{ route('join.save', eid(3)) }}" enctype="multipart/form-data">@csrf
             <div class="form-row">
                 <div class="field"><label>Bank and branch name</label><input name="bank_name" value="{{ old('bank_name', $app->bank_name) }}" placeholder="e.g. CRDB Mwanza"></div>
                 <div class="field"><label>Bank account number</label><input name="bank_account" value="{{ old('bank_account', $app->bank_account) }}" placeholder="Account number"></div>
-            </div>
-            <div class="field"><label>Contributions made (tick all that apply)</label>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <label style="display:flex;gap:6px;align-items:center;background:var(--sand-100);padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;"><input type="checkbox" name="pay_entrance" value="1" {{ old('pay_entrance', ($app->contributions['entrance_fee'] ?? false)) ? 'checked' : '' }}> Entrance fee</label>
-                    <label style="display:flex;gap:6px;align-items:center;background:var(--sand-100);padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;"><input type="checkbox" name="pay_capital" value="1" {{ old('pay_capital', ($app->contributions['capital_contribution'] ?? false)) ? 'checked' : '' }}> Capital contribution</label>
-                    <label style="display:flex;gap:6px;align-items:center;background:var(--sand-100);padding:9px 14px;border-radius:20px;font-size:13px;font-weight:600;"><input type="checkbox" name="pay_phase2" value="1" {{ old('pay_phase2', ($app->contributions['phase2'] ?? false)) ? 'checked' : '' }}> Phase 2 · TShs 1,800,000 (12 shares)</label>
-                    <select name="pay_phase2_mode" style="padding:9px 12px;border:1.5px solid var(--line);border-radius:20px;font-size:13px;font-weight:600;background:var(--white);"><option value="">Phase 2 mode…</option><option value="lumpsum" {{ old('pay_phase2_mode', ($app->contributions['phase2_mode'] ?? '')) === 'lumpsum' ? 'selected' : '' }}>Lumpsum</option><option value="installment" {{ old('pay_phase2_mode', ($app->contributions['phase2_mode'] ?? '')) === 'installment' ? 'selected' : '' }}>Installment</option></select>
-                </div>
-            </div>
-            <div class="field"><label>Payment reference numbers (one per line)</label><textarea name="payment_refs" rows="2" placeholder="e.g. Entrance fee — ref 998877">{{ old('payment_refs', ($app->contributions['payment_refs'] ?? '')) }}</textarea></div>
-            <div class="form-row-3">
-                <div class="field"><label>Payment slips (evidence)</label><input type="file" name="payment_slips[]" multiple accept=".jpg,.jpeg,.png,.pdf">@if(! empty($app->attachments['slips']))<div class="cell-sub" style="margin-top:6px;">{{ count($app->attachments['slips']) }} file(s) attached ✓ · new uploads are added</div>@endif</div>
-                <div class="field"><label>Bank standing order (phase 2)</label><input type="file" name="standing_order" accept=".jpg,.jpeg,.png,.pdf">@if(! empty($app->attachments['standing_order']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ · re-upload to replace</div>@endif</div>
-                <div class="field"><label>Annual subscription slip (students)</label><input type="file" name="subscription_slip" accept=".jpg,.jpeg,.png,.pdf">@if(! empty($app->attachments['subscription_slip']))<div class="cell-sub" style="margin-top:6px;">Uploaded ✓ · re-upload to replace</div>@endif</div>
             </div>
             <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(2)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
         </form>
@@ -128,8 +114,8 @@
             <button type="button" class="btn btn-ghost btn-sm" onclick="addBenRow()">+ Add beneficiary</button>
 
             <h3 style="margin:22px 0 10px;">Savings goal (optional)</h3>
-            <div class="form-row-4">
-                <div class="field"><label>Specific goal</label><input name="savings_goal" value="{{ old('savings_goal', $app->savings_goal) }}" placeholder="What is the money for?"></div>
+            <div class="field"><label>Specific goal</label><input name="savings_goal" value="{{ old('savings_goal', $app->savings_goal) }}" placeholder="What is the money for?"></div>
+            <div class="form-row-3">
                 <div class="field"><label>Amount (TZS)</label><input type="number" name="goal_amount" value="{{ old('goal_amount', $app->goal_amount) }}" min="0" step="1000" placeholder="Figures only"></div>
                 <div class="field"><label>Months</label><input type="number" name="goal_months" value="{{ old('goal_months', $app->goal_months) }}" min="1" max="600"></div>
                 <div class="field"><label>Start saving</label><input type="date" name="goal_start" value="{{ old('goal_start', $app->goal_start?->format('Y-m-d')) }}"></div>
@@ -199,12 +185,6 @@
         <div class="detail-grid-4" style="margin-bottom:20px;">
             <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $app->bank_name ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $app->bank_account ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Entrance fee</div><div class="dv">{{ ($app->contributions['entrance_fee'] ?? false) ? 'Paid ✓' : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Capital contribution</div><div class="dv">{{ ($app->contributions['capital_contribution'] ?? false) ? 'Paid ✓' : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Phase 2 (12 shares)</div><div class="dv">{{ ($app->contributions['phase2'] ?? false) ? 'Paid ✓ ('.($app->contributions['phase2_mode'] ?? '?').')' : '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Payment refs</div><div class="dv">{{ ($app->contributions['payment_refs'] ?? '') ?: '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Slips attached</div><div class="dv">{{ count($app->attachments['slips'] ?? []) }}</div></div>
-            <div class="detail-item"><div class="dk">Standing order</div><div class="dv">{{ ! empty($app->attachments['standing_order']) ? 'Attached ✓' : '—' }}</div></div>
         </div>
         <h3 style="margin:0 0 12px;">Membership &amp; people <a href="{{ route('join.step', eid(4)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">

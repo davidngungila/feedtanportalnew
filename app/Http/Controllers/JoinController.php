@@ -130,15 +130,6 @@ class JoinController extends Controller
             3 => $request->validate([
                 'bank_name' => ['nullable', 'string', 'max:255'],
                 'bank_account' => ['nullable', 'string', 'max:100'],
-                'pay_entrance' => ['nullable', 'in:1'],
-                'pay_capital' => ['nullable', 'in:1'],
-                'pay_phase2' => ['nullable', 'in:1'],
-                'pay_phase2_mode' => ['nullable', 'in:lumpsum,installment'],
-                'payment_refs' => ['nullable', 'string', 'max:1000'],
-                'payment_slips' => ['nullable', 'array'],
-                'payment_slips.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-                'standing_order' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-                'subscription_slip' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
             ]),
             default => $request->validate([
                 'member_type_id' => ['nullable', 'exists:member_types,id'],
@@ -167,24 +158,12 @@ class JoinController extends Controller
         };
 
         $update = collect($data)->except([
-            'passport_picture', 'payment_slips', 'standing_order',
-            'subscription_slip', 'application_letter', 'pay_entrance', 'pay_capital',
-            'pay_phase2', 'pay_phase2_mode', 'payment_refs', 'beneficiaries',
+            'passport_picture', 'application_letter',
+            'beneficiaries',
             'consider_ordinary', 'group_registered',
         ])->all();
         $update['consider_ordinary'] = $request->boolean('consider_ordinary');
         $update['group_registered'] = $request->boolean('group_registered');
-
-        // Contributions checklist (form: entrance / capital / phase 2 + refs).
-        if ($n === 3) {
-            $update['contributions'] = [
-                'entrance_fee' => $request->boolean('pay_entrance'),
-                'capital_contribution' => $request->boolean('pay_capital'),
-                'phase2' => $request->boolean('pay_phase2'),
-                'phase2_mode' => $request->get('pay_phase2_mode'),
-                'payment_refs' => $request->get('payment_refs'),
-            ];
-        }
 
         // Beneficiaries must allocate 100% when given.
         if ($n === 4 && ! empty($data['beneficiaries'])) {
@@ -198,20 +177,13 @@ class JoinController extends Controller
 
         // Attachments merge with previously uploaded files.
         $attachments = $app->attachments ?? [];
-        foreach (['passport_picture' => 'passport', 'standing_order' => 'standing_order', 'subscription_slip' => 'subscription_slip', 'application_letter' => 'application_letter'] as $field => $key) {
+        foreach (['passport_picture' => 'passport', 'application_letter' => 'application_letter'] as $field => $key) {
             if ($request->hasFile($field)) {
                 if (! empty($attachments[$key]) && is_string($attachments[$key])) {
                     Storage::disk('public')->delete($attachments[$key]);
                 }
                 $attachments[$key] = $this->storeUpload($request->file($field), 'applications');
             }
-        }
-        if ($request->hasFile('payment_slips')) {
-            $slips = array_filter((array) ($attachments['slips'] ?? []), 'is_string');
-            foreach ((array) $request->file('payment_slips') as $slip) {
-                $slips[] = $this->storeUpload($slip, 'applications');
-            }
-            $attachments['slips'] = array_values($slips);
         }
         if ($attachments) {
             $update['attachments'] = $attachments;

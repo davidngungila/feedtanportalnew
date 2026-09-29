@@ -51,7 +51,7 @@ class MemberOnboardingTest extends TestCase
 
         $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['name' => 'A Person', 'phone' => '0711000002', 'sex' => 'male'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza', 'job' => 'Trader'])->assertRedirect()->headers->get('Location'))));
-        $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), ['bank_name' => 'CRDB', 'pay_entrance' => '1', 'payment_refs' => 'REF-1'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), ['bank_name' => 'CRDB', 'bank_account' => '0112233'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(5, did(basename($this->actingAs($user)->post(route('join.save', eid(4)), [
             'referrer' => 'Juma',
             'beneficiaries' => [
@@ -71,7 +71,7 @@ class MemberOnboardingTest extends TestCase
 
         $app = MemberApplication::where('user_id', $user->id)->first();
         $this->assertEquals('pending', $app->status);
-        $this->assertTrue($app->contributions['entrance_fee']);
+        $this->assertEquals('CRDB', $app->bank_name);
         $this->assertCount(2, $app->beneficiaries);
     }
 

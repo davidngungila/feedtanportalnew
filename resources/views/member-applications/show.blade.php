@@ -15,7 +15,7 @@
     <div class="strip-4">
         <div class="balance-box"><div class="bb-label">Status</div><div class="bb-amount" style="font-size:18px;"><span class="tag {{ status_badge($application->status) }}">{{ ucfirst($application->status) }}</span></div></div>
         <div class="balance-box"><div class="bb-label">Type applied</div><div class="bb-amount" style="font-size:18px;">{{ $application->memberType->name ?? '—' }}</div></div>
-        <div class="balance-box"><div class="bb-label">Contributions ticked</div><div class="bb-amount" style="font-size:18px;">{{ collect($application->contributions ?? [])->only(['entrance_fee', 'capital_contribution', 'phase2'])->filter()->count() }} / 3</div></div>
+        <div class="balance-box"><div class="bb-label">Beneficiaries</div><div class="bb-amount" style="font-size:18px;">{{ count($application->beneficiaries ?? []) }}</div></div>
         <div class="balance-box"><div class="bb-label">Files attached</div><div class="bb-amount" style="font-size:18px;">{{ count($application->attachments['slips'] ?? []) + collect($application->attachments ?? [])->except('slips')->filter()->count() }}</div></div>
     </div>
 
@@ -42,12 +42,8 @@
             <div class="panel-body"><div class="detail-grid">
                 <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $application->bank_name ?? '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $application->bank_account ?? '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Entrance fee</div><div class="dv">{{ ($application->contributions['entrance_fee'] ?? false) ? 'Paid ✓' : '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Capital contribution</div><div class="dv">{{ ($application->contributions['capital_contribution'] ?? false) ? 'Paid ✓' : '—' }}</div></div>
-                <div class="detail-item"><div class="dk">Phase 2 (12 shares)</div><div class="dv">{{ ($application->contributions['phase2'] ?? false) ? 'Paid ✓ ('.($application->contributions['phase2_mode'] ?? '?').')' : '—' }}</div></div>
                 <div class="detail-item"><div class="dk">Ordinary track</div><div class="dv">{{ $application->consider_ordinary ? 'Wants consideration' : '—' }}</div></div>
             </div>
-            @if(! empty($application->contributions['payment_refs']))<div class="receipt"><div class="receipt-row"><span>Payment refs</span><b style="font-weight:600;">{{ $application->contributions['payment_refs'] }}</b></div></div>@endif
             @if($application->notes)<div class="receipt"><div class="receipt-row"><span>Notes</span><b style="font-weight:600;">{{ $application->notes }}</b></div></div>@endif
             </div>
         </div>
@@ -76,7 +72,7 @@
             </div>
             <div class="receipt">
                 @php $files = $application->attachments ?? []; @endphp
-                @foreach(['passport' => 'Passport picture', 'standing_order' => 'Standing order', 'subscription_slip' => 'Subscription slip', 'application_letter' => 'Application letter'] as $k => $label)
+                @foreach(['passport' => 'Passport picture', 'application_letter' => 'Application letter'] as $k => $label)
                     @if(! empty($files[$k]))
                     <div class="receipt-row"><span>{{ $label }}</span><b><a href="{{ Storage::disk('public')->url($files[$k]) }}" target="_blank" style="color:var(--terracotta-600);">Open →</a></b></div>
                     @endif
