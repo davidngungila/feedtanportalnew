@@ -52,18 +52,23 @@ class MemberOnboardingTest extends TestCase
         $this->assertEquals(2, did(basename($this->actingAs($user)->post(route('join.save', eid(1)), ['first_name' => 'Amina', 'middle_name' => 'Said', 'surname' => 'Juma', 'phone' => '0711000002', 'sex' => 'female'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(3, did(basename($this->actingAs($user)->post(route('join.save', eid(2)), ['address' => 'Mwanza', 'job' => 'Trader'])->assertRedirect()->headers->get('Location'))));
         $this->assertEquals(4, did(basename($this->actingAs($user)->post(route('join.save', eid(3)), ['bank_name' => 'CRDB', 'bank_account' => '0112233'])->assertRedirect()->headers->get('Location'))));
-        $this->assertEquals(5, did(basename($this->actingAs($user)->post(route('join.save', eid(4)), [
+        $this->assertEquals(5, did(basename($this->actingAs($user)->post(route('join.save', eid(4)), ['referrer' => 'Juma'])->assertRedirect()->headers->get('Location'))));
+        $this->assertEquals(6, did(basename($this->actingAs($user)->post(route('join.save', eid(5)), [
             'referrer' => 'Juma',
             'beneficiaries' => [
                 ['name' => 'Kid One', 'relationship' => 'Child', 'allocation' => 60, 'bank' => '', 'contact' => '0711'],
                 ['name' => 'Spouse', 'relationship' => 'Spouse', 'allocation' => 40, 'bank' => '', 'contact' => '0722'],
             ],
         ])->assertRedirect()->headers->get('Location'))));
-        $this->actingAs($user)->get(route('join.step', eid(5)))->assertOk()->assertSee('Beneficiaries');
+        $this->assertEquals(7, did(basename($this->actingAs($user)->post(route('join.save', eid(6)), ['savings_goal' => 'House', 'goal_amount' => 5000000, 'goal_months' => 24])->assertRedirect()->headers->get('Location'))));
+        $this->actingAs($user)->get(route('join.step', eid(7)))->assertOk()->assertSee('Beneficiaries');
+        foreach ([1, 2, 3, 4, 5, 6] as $n) {
+            $this->actingAs($user)->get(route('join.step', eid($n)))->assertOk();
+        }
         // Tampered step keys are rejected.
         $this->actingAs($user)->get(route('join.step', 'NOTASTEP'))->assertNotFound();
         // Allocations must total 100%.
-        $this->actingAs($user)->post(route('join.save', eid(4)), [
+        $this->actingAs($user)->post(route('join.save', eid(5)), [
             'beneficiaries' => [['name' => 'Kid One', 'allocation' => 30]],
         ])->assertSessionHasErrors('beneficiaries');
         $this->actingAs($user)->post(route('join.submit'))->assertRedirect(route('join.status'));

@@ -14,11 +14,13 @@ class JoinController extends Controller
         1 => 'Personal details',
         2 => 'Contact & work',
         3 => 'Bank & payments',
-        4 => 'Membership & people',
-        5 => 'Review & submit',
+        4 => 'Membership',
+        5 => 'Beneficiaries',
+        6 => 'Savings goal',
+        7 => 'Review & submit',
     ];
 
-    public const MAX_STEP = 5;
+    public const MAX_STEP = 7;
 
     protected function ownApplication(): ?MemberApplication
     {
@@ -194,19 +196,23 @@ class JoinController extends Controller
                 'bank_name' => ['nullable', 'string', 'max:255'],
                 'bank_account' => ['nullable', 'string', 'max:100'],
             ]),
-            default => $request->validate([
+            4 => $request->validate([
                 'member_type_id' => ['nullable', 'exists:member_types,id'],
                 'referrer' => ['nullable', 'string', 'max:255'],
-                'savings_goal' => ['nullable', 'string', 'max:255'],
-                'goal_amount' => ['nullable', 'numeric', 'min:0'],
-                'goal_months' => ['nullable', 'integer', 'min:1', 'max:600'],
-                'goal_start' => ['nullable', 'date'],
+            ]),
+            5 => $request->validate([
                 'beneficiaries' => ['nullable', 'array', 'max:6'],
                 'beneficiaries.*.name' => ['required_with:beneficiaries', 'string', 'max:255'],
                 'beneficiaries.*.relationship' => ['nullable', 'string', 'max:100'],
                 'beneficiaries.*.allocation' => ['nullable', 'numeric', 'min:0', 'max:100'],
                 'beneficiaries.*.bank' => ['nullable', 'string', 'max:255'],
                 'beneficiaries.*.contact' => ['nullable', 'string', 'max:255'],
+            ]),
+            default => $request->validate([
+                'savings_goal' => ['nullable', 'string', 'max:255'],
+                'goal_amount' => ['nullable', 'numeric', 'min:0'],
+                'goal_months' => ['nullable', 'integer', 'min:1', 'max:600'],
+                'goal_start' => ['nullable', 'date'],
             ]),
         };
 
@@ -216,7 +222,7 @@ class JoinController extends Controller
         ])->all();
 
         // Beneficiaries must allocate 100% when given.
-        if ($n === 4 && ! empty($data['beneficiaries'])) {
+        if ($n === 5 && ! empty($data['beneficiaries'])) {
             $rows = array_values(array_filter($data['beneficiaries'], fn ($b) => trim($b['name'] ?? '') !== ''));
             $total = round(collect($rows)->sum(fn ($b) => (float) ($b['allocation'] ?? 0)), 2);
             if ($total > 0 && abs($total - 100) > 0.01) {

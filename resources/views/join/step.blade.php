@@ -2,8 +2,8 @@
 @section('title', 'Membership · Step '.$step)
 @section('content')
     <div class="view-head">
-        <div><h2>Become a member — step {{ $step }} of 5</h2><p class="sub">{{ $steps[$step] }} · your progress saves automatically after each step.</p></div>
-        <div class="view-actions"><span class="tag tag-gold">Step {{ $step }} of 5</span><a href="{{ route('join.status') }}" class="btn btn-ghost">Application status</a></div>
+        <div><h2>Become a member — step {{ $step }} of 7</h2><p class="sub">{{ $steps[$step] }} · your progress saves automatically after each step.</p></div>
+        <div class="view-actions"><span class="tag tag-gold">Step {{ $step }} of 7</span><a href="{{ route('join.status') }}" class="btn btn-ghost">Application status</a></div>
     </div>
 
     <div class="settings-panel">
@@ -19,9 +19,15 @@
                 Bank &amp; payments
                 @endif
                 @if($step === 4)
-                Membership &amp; people
+                Membership
                 @endif
                 @if($step === 5)
+                Beneficiaries
+                @endif
+                @if($step === 6)
+                Savings goal
+                @endif
+                @if($step === 7)
                 Review &amp; submit
                 @endif
             </h3>
@@ -102,14 +108,30 @@
         @endif
 
         @if($step === 4)
-        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Who is joining, and who benefits. Choose your membership type, tell us who introduced you, and name your beneficiaries with their % allocation (must add up to 100%).</p>
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Choose the membership type that fits you and tell us who introduced you. Names and details of beneficiaries and your savings goal come on the next pages.</p>
         <form method="POST" action="{{ route('join.save', eid(4)) }}" enctype="multipart/form-data">@csrf
             <div class="form-row">
                 <div class="field"><label>Type of membership applied</label><select name="member_type_id"><option value="">— Select —</option>@foreach($types as $t)<option value="{{ $t->id }}" {{ (string)old('member_type_id', $app->member_type_id) === (string)$t->id ? 'selected' : '' }}>{{ $t->name }}</option>@endforeach</select></div>
                 <div class="field"><label>Who introduced / guarantees you?</label><input name="referrer" value="{{ old('referrer', $app->referrer) }}" placeholder="Name of person, or how you heard of FeedTan"></div>
             </div>
+            <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(3)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
+        </form>
+        @if($types->isNotEmpty() || $groups->isNotEmpty())
+        <h3 style="margin:24px 0 12px;">Available options in full</h3>
+        <div class="card-grid">
+            @foreach($types as $t)
+            <div class="mini-card"><div class="mc-top"><span class="mc-name">{{ $t->name }}</span><span class="tag tag-gold">Type</span></div><div class="mc-label">{{ $t->description ?? 'Standard member type with full access after approval.' }}</div></div>
+            @endforeach
+            @foreach($groups as $g)
+            <div class="mini-card"><div class="mc-top"><span class="mc-name">{{ $g->name }}</span><span class="tag tag-green">Group</span></div><div class="mc-label">{{ $g->description ?? 'Member group that saves or borrows together.' }}</div></div>
+            @endforeach
+        </div>
+        @endif
+        @endif
 
-            <h3 style="margin:22px 0 10px;">Beneficiaries <span class="cell-sub">(in case of unfortunate event of death)</span></h3>
+        @if($step === 5)
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">Who benefits if anything happens to you. Name each beneficiary with their relationship, % allocation (must add up to 100%), bank details and contact.</p>
+        <form method="POST" action="{{ route('join.save', eid(5)) }}" enctype="multipart/form-data">@csrf
             <div id="benList">
                 @php $bens = old('beneficiaries', $app->beneficiaries ?? [['name' => '', 'relationship' => '', 'allocation' => '', 'bank' => '', 'contact' => '']]); @endphp
                 @foreach($bens as $i => $b)
@@ -125,15 +147,7 @@
             </div>
             <button type="button" class="btn btn-ghost btn-sm" onclick="addBenRow()">+ Add beneficiary</button>
 
-            <h3 style="margin:22px 0 10px;">Savings goal (optional)</h3>
-            <div class="field"><label>Specific goal</label><input name="savings_goal" value="{{ old('savings_goal', $app->savings_goal) }}" placeholder="What is the money for?"></div>
-            <div class="form-row-3">
-                <div class="field"><label>Amount (TZS)</label><input type="number" name="goal_amount" value="{{ old('goal_amount', $app->goal_amount) }}" min="0" step="1000" placeholder="Figures only"></div>
-                <div class="field"><label>Months</label><input type="number" name="goal_months" value="{{ old('goal_months', $app->goal_months) }}" min="1" max="600"></div>
-                <div class="field"><label>Start saving</label><input type="date" name="goal_start" value="{{ old('goal_start', $app->goal_start?->format('Y-m-d')) }}"></div>
-            </div>
-
-            <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(3)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; review →</button></div>
+            <div style="display:flex;gap:10px;margin-top:18px;"><a href="{{ route('join.step', eid(4)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; continue →</button></div>
         </form>
         <script>
         let benIndex = {{ count($bens) }};
@@ -165,7 +179,20 @@
         @endif
         @endif
 
-        @if($step === 5)
+        @if($step === 6)
+        <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1000px;">What are you saving for? Set a specific goal with a target amount and timeframe — the office can advise a plan that fits.</p>
+        <form method="POST" action="{{ route('join.save', eid(6)) }}" enctype="multipart/form-data">@csrf
+            <div class="field"><label>Specific goal</label><input name="savings_goal" value="{{ old('savings_goal', $app->savings_goal) }}" placeholder="What is the money for?"></div>
+            <div class="form-row-3">
+                <div class="field"><label>Amount (TZS)</label><input type="number" name="goal_amount" value="{{ old('goal_amount', $app->goal_amount) }}" min="0" step="1000" placeholder="Figures only"></div>
+                <div class="field"><label>Months</label><input type="number" name="goal_months" value="{{ old('goal_months', $app->goal_months) }}" min="1" max="600"></div>
+                <div class="field"><label>Start saving</label><input type="date" name="goal_start" value="{{ old('goal_start', $app->goal_start?->format('Y-m-d')) }}"></div>
+            </div>
+            <div style="display:flex;gap:10px;"><a href="{{ route('join.step', eid(5)) }}" class="btn btn-ghost">← Back</a><button class="btn btn-primary" type="submit">Save &amp; review →</button></div>
+        </form>
+        @endif
+
+        @if($step === 7)
         <p style="font-size:14px;color:var(--ink-soft);margin-bottom:20px;line-height:1.7;max-width:1100px;">Check everything once more. You can jump back to any step to fix it — nothing is sent until you press submit.</p>
         <h3 style="margin:0 0 12px;">Identity &amp; contact <a href="{{ route('join.step', eid(1)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">
@@ -181,7 +208,6 @@
             <div class="detail-item"><div class="dk">Address</div><div class="dv">{{ $app->address ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Job</div><div class="dv">{{ $app->job ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Employer</div><div class="dv">{{ $app->employer ?? '—' }}</div></div>
-            <div class="detail-item"><div class="dk">Statements via</div><div class="dv">{{ $app->statement_channel ? ucfirst($app->statement_channel) : '—' }}</div></div>
             <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
         </div>
         <h3 style="margin:0 0 12px;">Bank &amp; payments <a href="{{ route('join.step', eid(3)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
@@ -189,13 +215,13 @@
             <div class="detail-item"><div class="dk">Bank</div><div class="dv">{{ $app->bank_name ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Account</div><div class="dv">{{ $app->bank_account ?? '—' }}</div></div>
         </div>
-        <h3 style="margin:0 0 12px;">Membership &amp; people <a href="{{ route('join.step', eid(4)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
+        <h3 style="margin:0 0 12px;">Membership <a href="{{ route('join.step', eid(4)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">
             <div class="detail-item"><div class="dk">Type applied</div><div class="dv">{{ $app->memberType->name ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Referrer</div><div class="dv">{{ $app->referrer ?? '—' }}</div></div>
         </div>
         @if(! empty($app->beneficiaries))
-        <h3 style="margin:0 0 12px;">Beneficiaries</h3>
+        <h3 style="margin:0 0 12px;">Beneficiaries <a href="{{ route('join.step', eid(5)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="table-card"><div class="table-scroll"><table>
             <thead><tr><th>Name</th><th>Relationship</th><th>%</th><th>Bank</th><th>Contact</th></tr></thead>
             <tbody>
@@ -206,7 +232,7 @@
         </table></div></div>
         @endif
         @if($app->savings_goal || $app->goal_amount)
-        <h3 style="margin:20px 0 12px;">Savings goal</h3>
+        <h3 style="margin:20px 0 12px;">Savings goal <a href="{{ route('join.step', eid(6)) }}" style="color:var(--terracotta-600);font-size:13px;">Edit</a></h3>
         <div class="detail-grid-4" style="margin-bottom:20px;">
             <div class="detail-item"><div class="dk">Goal</div><div class="dv">{{ $app->savings_goal ?? '—' }}</div></div>
             <div class="detail-item"><div class="dk">Amount</div><div class="dv">{{ $app->goal_amount ? money($app->goal_amount) : '—' }}</div></div>
@@ -215,7 +241,7 @@
         </div>
         @endif
         <form method="POST" action="{{ route('join.submit') }}" style="display:flex;gap:10px;margin-top:18px;">@csrf
-            <a href="{{ route('join.step', eid(4)) }}" class="btn btn-ghost">← Back</a>
+            <a href="{{ route('join.step', eid(6)) }}" class="btn btn-ghost">← Back</a>
             <button class="btn btn-primary" type="submit">Submit application</button>
         </form>
         <div class="card-grid" style="margin-top:22px;">
