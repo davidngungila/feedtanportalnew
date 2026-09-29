@@ -189,6 +189,7 @@
     @endif
     @if($errors->any())<div class="err-banner anim">{{ $errors->first() }}</div>@endif
 
+    @if($payout->status === 'pending')<div id="detailsStep">@endif
     <section class="card anim">
         <div class="card-h">
             <div class="ico"><i class="fa-solid fa-receipt"></i></div>
@@ -206,6 +207,10 @@
             <div class="kv total"><div class="k-ico"><i class="fa-solid fa-wallet"></i></div><div class="k"><b>Salio lako</b></div><div class="v">@money($payout->net_cash)</div></div>
         </div>
     </section>
+    @if($payout->status === 'pending')
+    <button type="button" class="btn" id="toBreakdownBtn" style="margin-top:16px"><span>Endelea na mchanganuo wa malipo</span><i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+    @endif
 
     @if($payout->status === 'paid')
         <section class="card anim">
@@ -249,8 +254,9 @@
             </div>
         </section>
     @else
-        <section class="card anim">
+        <section class="card anim hidden-step" id="allocCard">
             <div class="card-b" style="padding-top:6px">
+                <button type="button" class="btn btn-back" id="backToDetailsBtn" style="margin-top:0;margin-bottom:6px"><i class="fa-solid fa-arrow-left"></i><span>Rudi kwenye taarifa</span></button>
                 @if($payout->net_cash > 0)
                 <form method="POST" action="{{ route('verify.confirm', $payout) }}" id="verifyForm" data-net="{{ $payout->net_cash }}" novalidate>
                     @csrf
@@ -407,6 +413,24 @@ document.addEventListener('DOMContentLoaded', function () {
     allocInputs.forEach(i => i.addEventListener('input', () => { hideErr(); recalc(); }));
     if (nextBtn) nextBtn.addEventListener('click', goPreview);
     if (backBtn) backBtn.addEventListener('click', goBack);
+    const detailsStep = document.getElementById('detailsStep');
+    const allocCard = document.getElementById('allocCard');
+    const toBreakdownBtn = document.getElementById('toBreakdownBtn');
+    const backToDetailsBtn = document.getElementById('backToDetailsBtn');
+    if (toBreakdownBtn) toBreakdownBtn.addEventListener('click', () => {
+        if (detailsStep) detailsStep.classList.add('hidden-step');
+        toBreakdownBtn.classList.add('hidden-step');
+        if (allocCard) allocCard.classList.remove('hidden-step');
+        hideErr();
+        recalc();
+        if (allocCard) allocCard.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    if (backToDetailsBtn) backToDetailsBtn.addEventListener('click', () => {
+        if (allocCard) allocCard.classList.add('hidden-step');
+        if (detailsStep) detailsStep.classList.remove('hidden-step');
+        if (toBreakdownBtn) toBreakdownBtn.classList.remove('hidden-step');
+        if (detailsStep) detailsStep.scrollIntoView({behavior:'smooth', block:'start'});
+    });
     recalc();
     f.addEventListener('submit', function () {
         btn.disabled = true;
