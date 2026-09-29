@@ -82,14 +82,10 @@
         <form method="POST" action="{{ route('register') }}">
             @csrf
             <div class="field"><label for="name">Full name</label><input id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Amina Juma" required autofocus></div>
-            <div class="form-row">
-                <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" value="{{ old('phone') }}" placeholder="07…" required></div>
-                <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" required></div>
-            </div>
-            <div class="form-row">
-                <div class="field"><label for="password">Password</label><input type="password" id="password" name="password" placeholder="Min 6 characters" required></div>
-                <div class="field"><label for="password_confirmation">Confirm</label><input type="password" id="password_confirmation" name="password_confirmation" placeholder="Repeat password" required></div>
-            </div>
+            <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" value="{{ old('phone') }}" placeholder="07…" required></div>
+            <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="you@example.com" required></div>
+            <div class="field"><label for="password">Password</label><input type="password" id="password" name="password" placeholder="Min 6 characters" required></div>
+            <div class="field"><label for="password_confirmation">Confirm</label><input type="password" id="password_confirmation" name="password_confirmation" placeholder="Repeat password" required></div>
             <button type="submit" class="btn">Create account &amp; continue</button>
         </form>
 
