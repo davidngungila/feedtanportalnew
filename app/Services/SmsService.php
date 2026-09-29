@@ -25,6 +25,25 @@ class SmsService
             ?: 'Habari {name}, malipo yako ya uwekezaji yamekomaa: TZS {amount}. Thibitisha taarifa zako hapa: {link} - FeedTan CMG';
     }
 
+    public static function defaultCouponTemplate(): string
+    {
+        return Setting::get('comm_coupon_sms')
+            ?: 'Habari {name}, coupon yako ya FeedTan CMG: TZS {amount}. Thibitisha taarifa zako hapa: {link} - FeedTan CMG';
+    }
+
+    public static function buildCouponMessage(\App\Models\InvestmentPayout $payout, ?string $template = null): string
+    {
+        $template ??= self::defaultCouponTemplate();
+
+        return strtr($template, [
+            '{name}' => $payout->member->name ?? 'mwanachama',
+            '{amount}' => number_format((float) $payout->net_cash, 0),
+            '{link}' => $payout->shortUrl(),
+            '{code}' => $payout->verify_code,
+            '{phone}' => $payout->phone,
+        ]);
+    }
+
     public static function buildMessage(\App\Models\InvestmentPayout $payout, ?string $template = null): string
     {
         $template ??= self::defaultTemplate();

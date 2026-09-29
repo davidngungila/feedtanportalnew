@@ -333,14 +333,14 @@ class CouponPaymentController extends Controller
     {
         [$ok, $resp] = \App\Services\SmsService::send(
             $payout->intlPhone(),
-            \App\Services\SmsService::buildMessage($payout->load('member'), $template)
+            \App\Services\SmsService::buildCouponMessage($payout->load('member'), $template)
         );
 
         \App\Models\SmsLog::create([
             'investment_payout_id' => $payout->id,
             'member_id' => $payout->member_id,
             'phone' => $payout->phone,
-            'message' => \App\Services\SmsService::buildMessage($payout, $template),
+            'message' => \App\Services\SmsService::buildCouponMessage($payout, $template),
             'status' => $ok ? 'sent' : 'failed',
             'provider_response' => $resp,
             'created_by' => auth()->id(),
@@ -383,7 +383,7 @@ class CouponPaymentController extends Controller
 
         // One NextSMS v2 multi request when possible, else per-recipient singles.
         [$bulkOk, $bulkResp] = \App\Services\SmsService::sendBulk(
-            $payouts->map(fn ($p) => ['to' => $p->intlPhone(), 'text' => \App\Services\SmsService::buildMessage($p, $template)])->all()
+            $payouts->map(fn ($p) => ['to' => $p->intlPhone(), 'text' => \App\Services\SmsService::buildCouponMessage($p, $template)])->all()
         );
 
         $sent = 0;
@@ -394,7 +394,7 @@ class CouponPaymentController extends Controller
                     'investment_payout_id' => $p->id,
                     'member_id' => $p->member_id,
                     'phone' => $p->phone,
-                    'message' => \App\Services\SmsService::buildMessage($p, $template),
+                    'message' => \App\Services\SmsService::buildCouponMessage($p, $template),
                     'status' => 'sent',
                     'provider_response' => 'bulk: '.$bulkResp,
                     'created_by' => auth()->id(),

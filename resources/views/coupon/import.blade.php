@@ -39,7 +39,7 @@
         <div class="panel-body">
             <form method="POST" action="{{ route('coupon.sms.bulk') }}" onsubmit="return confirm('Send to {{ $pendingSms }} member(s)?')">@csrf
                 <div class="field"><label>Message text — placeholders: {name} {amount} {link} {code} {phone}</label>
-                    <textarea name="message" id="bulkMsg" rows="3">{{ \App\Services\SmsService::defaultTemplate() }}</textarea>
+                    <textarea name="message" id="bulkMsg" rows="3">{{ \App\Services\SmsService::defaultCouponTemplate() }}</textarea>
                 </div>
                 <div class="receipt"><div class="receipt-row"><span>Preview{{ $previewPayout ? ' — '.$previewPayout->member->name : '' }}</span><b id="bulkPreview" style="font-weight:600;"></b></div></div>
                 <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">

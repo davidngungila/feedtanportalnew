@@ -116,6 +116,7 @@ class SettingController extends Controller
             'comm_whatsapp_enabled' => ['nullable', 'in:0,1'],
             'comm_member_welcome_msg' => ['nullable', 'string', 'max:500'],
             'comm_payout_sms' => ['nullable', 'string', 'max:500'],
+            'comm_coupon_sms' => ['nullable', 'string', 'max:500'],
         ], 'settings.communication');
     }
 
