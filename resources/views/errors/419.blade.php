@@ -3,7 +3,7 @@
 @section('code', '419')
 @section('content')
 <div class="error-wrap">
-    <div class="error-card" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
+    <div class="error-content" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
         <span class="error-tag">Error 419</span>
         <div class="error-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>

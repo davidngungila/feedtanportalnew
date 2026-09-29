@@ -153,15 +153,8 @@
             flex:1;display:flex;align-items:center;justify-content:center;
             padding:24px 0;
         }
-        .error-card{
-            width:100%;max-width:640px;background:var(--white);
-            border:1px solid var(--line);border-radius:var(--radius-lg);
-            box-shadow:var(--shadow-md);padding:44px 42px;text-align:center;
-            position:relative;overflow:hidden;
-        }
-        .error-card::before{
-            content:"";position:absolute;top:0;left:0;right:0;height:5px;
-            background:linear-gradient(90deg,var(--terracotta-600),var(--gold-500));
+        .error-content{
+            width:100%;max-width:640px;margin:0 auto;padding:20px 12px;text-align:center;
         }
         .error-icon{
             width:84px;height:84px;border-radius:24px;margin:0 auto 20px;
@@ -183,8 +176,8 @@
             background:var(--err-tint,var(--terracotta-100));
             color:var(--err-fg,var(--terracotta-600));
         }
-        .error-card h1{font-size:26px;margin:10px 0 10px;}
-        .error-card .lede{color:var(--ink-soft);font-size:14.5px;line-height:1.65;max-width:460px;margin:0 auto;}
+        .error-content h1{font-size:26px;margin:10px 0 10px;}
+        .error-content .lede{color:var(--ink-soft);font-size:14.5px;line-height:1.65;max-width:460px;margin:0 auto;}
         .error-meta{
             margin:22px auto 0;max-width:480px;
             background:var(--sand-100);border:1px dashed var(--coffee-300);
@@ -226,7 +219,7 @@
         @media (max-width:640px){
             .view-wrap{padding:16px;}
             .topbar{padding:0 14px;gap:10px;}
-            .error-card{padding:32px 22px;}
+            .error-content{padding:12px 4px;}
             .error-code{font-size:48px;}
             .tb-live span{display:none;}
             .tb-user-text{display:none;}

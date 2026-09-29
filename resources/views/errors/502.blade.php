@@ -3,7 +3,7 @@
 @section('code', '502')
 @section('content')
 <div class="error-wrap">
-    <div class="error-card" style="--err-tint:var(--danger-100);--err-fg:var(--danger);">
+    <div class="error-content" style="--err-tint:var(--danger-100);--err-fg:var(--danger);">
         <span class="error-tag">Error 502</span>
         <div class="error-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="7" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="7" rx="2" ry="2"></rect><line x1="6" y1="6.5" x2="6.01" y2="6.5"></line><line x1="6" y1="17.5" x2="6.01" y2="17.5"></line></svg>

@@ -3,7 +3,7 @@
 @section('code', '408')
 @section('content')
 <div class="error-wrap">
-    <div class="error-card" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
+    <div class="error-content" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
         <span class="error-tag">Error 408</span>
         <div class="error-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>

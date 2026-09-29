@@ -3,7 +3,7 @@
 @section('code', '403')
 @section('content')
 <div class="error-wrap">
-    <div class="error-card" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
+    <div class="error-content" style="--err-tint:var(--gold-100);--err-fg:#8a6418;">
         <span class="error-tag">Error 403</span>
         <div class="error-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
