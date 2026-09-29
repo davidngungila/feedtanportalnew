@@ -28,7 +28,7 @@ class SmsService
     public static function defaultCouponTemplate(): string
     {
         return Setting::get('comm_coupon_sms')
-            ?: 'Habari {name}, coupon yako ya FeedTan CMG: TZS {amount}. Thibitisha taarifa zako hapa: {link} - FeedTan CMG';
+            ?: 'Habari {name}, Hongera! Umepata gawio la TZS {amount} kutoka kwenye uwekezaji wako wa FIA. Thibitisha malipo yako hapa: {link}. Endelea kuwekeza na kupata gawio zaidi.';
     }
 
     public static function buildCouponMessage(\App\Models\InvestmentPayout $payout, ?string $template = null): string
