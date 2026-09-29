@@ -21,8 +21,6 @@
                 Dashboard
             </a>
         </div>
-        <div class="error-links">Looking for something? <a href="{{ url('/members') }}">Members</a> · <a href="{{ url('/loans') }}">Loans</a> · <a href="{{ url('/dashboard') }}">Home</a></div>
-        <div class="error-foot">Feedtan Portal · Error 404 — missing route.</div>
     </div>
 </div>
 @endsection
