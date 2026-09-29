@@ -105,7 +105,10 @@
         .btn:active{transform:translateY(1px)}
         .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
         .btn-accept{background:linear-gradient(155deg,var(--acacia-500),var(--acacia-600));box-shadow:0 8px 20px rgba(94,110,63,.35)}
-        .btn-reject{background:var(--white);color:var(--danger);border:1.5px solid var(--danger);box-shadow:none;margin-top:10px}
+        .btn-reject{background:var(--white);color:var(--danger);border:1.5px solid var(--danger);box-shadow:none}
+        .choice-row{display:flex;gap:10px;margin-top:14px}
+        .choice-row .btn{margin-top:0}
+        @media (max-width:420px){.choice-row{flex-direction:column}}
         .btn-back{background:var(--white);color:var(--coffee-700);border:1.5px solid var(--line);box-shadow:none;margin-top:10px}
         .hidden-step{display:none}
         .mini-err{display:none;background:var(--danger-100);border:1.5px solid var(--danger);color:var(--danger);border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;margin-top:12px}
@@ -242,8 +245,10 @@
                         <h3 style="margin:0;font-size:18px">Je, taarifa hizi ni sahihi?</h3>
                         <p style="font-size:13px;color:var(--ink-soft);margin:6px 0 0">Angalia muhtasari hapo juu, kisha chagua.</p>
                     </div>
-                    <button type="button" class="btn btn-accept" id="acceptBtn"><i class="fa-solid fa-check"></i><span>Ndiyo — Endelea</span></button>
-                    <button type="button" class="btn btn-reject" id="rejectBtn"><i class="fa-solid fa-xmark"></i><span>Hapana — Kataa</span></button>
+                    <div class="choice-row">
+                        <button type="button" class="btn btn-accept" id="acceptBtn"><i class="fa-solid fa-check"></i><span>Ndiyo — Endelea</span></button>
+                        <button type="button" class="btn btn-reject" id="rejectBtn"><i class="fa-solid fa-xmark"></i><span>Hapana — Kataa</span></button>
+                    </div>
                 </div>
                 <div id="rejectStep" class="hidden-step">
                     <div style="font-size:11px;font-weight:800;color:var(--coffee-700);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px;">Andika sababu ya kukataa</div>
